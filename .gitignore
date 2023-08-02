@@ -1,0 +1,5 @@
+/.idea/
+/backend/target/
+/client/target/
+.env
+/backend/.env
