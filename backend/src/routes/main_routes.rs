@@ -25,8 +25,12 @@ pub async fn app(pool: PgPool) -> Router {
         .route("/protected", get(handlers::protected))
 
         // Posts
-        .route("/users/:id/posts", get(handlers::get_user_posts_by_id))
+        .route("/posts", get(handlers::get_all_posts))
+        .route("/posts/:id", get(handlers::get_post_by_id))
         .route("/posts", post(handlers::create_post))
+        .route("/posts/:id", delete(handlers::delete_post_by_id))
+        .route("/posts", put(handlers::update_post_by_id))
+        .route("/users/:id/posts", get(handlers::get_user_posts_by_id))
 
         // Misc
         .route("/*_", get(handle_404))

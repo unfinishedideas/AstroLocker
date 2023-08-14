@@ -7,7 +7,7 @@ use sqlx::{PgPool, Row};
 use tracing::info;
 
 use crate::error::AppError;
-use crate::models::post::{Post, PostId};
+use crate::models::post::{Post, PostId, UpdatePost};
 use crate::models::user::{User, UserSignup};
 // use crate::models::answer::{Answer, AnswerId};
 // use crate::models::comment::{Comment, CommentId, CommentReference};
@@ -84,6 +84,57 @@ impl Store {
     }
 
     // Posts
+    pub async fn get_all_posts(
+        &mut self,
+    ) -> Result<Vec<Post>, AppError> {
+        let res = sqlx::query(
+            r#"
+            SELECT * FROM posts;
+            "#
+        )
+        .fetch_all(&self.conn_pool)
+        .await?;
+
+        let posts: Vec<_> = res
+        .into_iter()
+        .map(|row| {
+            Post{
+                id: PostId(row.get("id")),
+                title: row.get("title"),
+                explanation: row.get("explanation"),
+                img_url: row.get("img_url"),
+                user_id: row.get("user_id")
+            }
+        })
+        .collect();
+        
+        Ok(posts)
+    }
+
+    pub async fn get_post_by_id(
+        &mut self,
+        post_id: i32
+    ) -> Result<Post, AppError> {
+        let res = sqlx::query(
+            r#"
+            SELECT * FROM posts WHERE id=$1
+            "#
+        )
+        .bind(post_id)
+        .fetch_one(&self.conn_pool)
+        .await?;
+
+        let post = Post {
+            id: PostId(res.get("id")),
+            title: res.get("title"),
+            explanation: res.get("explanation"),
+            img_url: res.get("img_url"),
+            user_id: res.get("user_id")
+        };
+
+        Ok(post)
+    }
+
     pub async fn add_post(
         &mut self,
         title: String,
@@ -116,6 +167,60 @@ impl Store {
         Ok(post)
     }
 
+    pub async fn delete_post_by_id(&mut self, post_id: i32) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+    DELETE FROM posts WHERE id = $1
+    "#,
+        )
+        .bind(post_id)
+        .execute(&self.conn_pool)
+        .await
+        .unwrap();
+
+        Ok(())
+    }
+
+    pub async fn update_post_by_id(
+        &mut self,
+        new_post: UpdatePost
+    ) -> Result<Post, AppError> {      
+        sqlx::query(
+            r#"
+            UPDATE posts
+            SET title = $1, explanation = $2, img_url = $3, user_id = $4
+            WHERE id = $5
+            "#,
+        )
+            .bind(new_post.title)
+            .bind(new_post.explanation)
+            .bind(new_post.img_url)
+            .bind(new_post.user_id)
+            .bind(new_post.id.0)
+        .execute(&self.conn_pool)
+            .await?;
+
+        let res = sqlx::query(
+            r#"
+            SELECT * FROM posts WHERE id=$1
+            "#
+        )
+        .bind(new_post.id.0)
+        .fetch_one(&self.conn_pool)
+        .await?;
+
+        let new_post = Post {
+            id: PostId(res.get("id")),
+            title: res.get("title"),
+            explanation: res.get("explanation"),
+            img_url: res.get("img_url"),
+            user_id: res.get("user_id")
+        };
+
+        Ok(new_post)
+    }
+
+
     pub async fn get_user_posts_by_id(
         &mut self,
         user_id: i32
@@ -138,11 +243,6 @@ impl Store {
                 explanation: row.get("explanation"),
                 img_url: row.get("img_url"),
                 user_id: row.get("user_id")
-                // id: row.id.into(),
-                // title: row.title,
-                // explanation: row.explanation,
-                // img_url: row.img_url,
-                // user_id: row.user_id
             }
         })
         .collect();
