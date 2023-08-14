@@ -13,11 +13,12 @@ use tracing::error;
 use crate::db::Store;
 use crate::error::AppError;
 use crate::get_timestamp_after_8_hours;
+use crate::models::post::{Post, CreatePost};
 // use crate::models::answer::{Answer, CreateAnswer};
 // use crate::models::question::{
 //     CreateQuestion, GetQuestionById, Question, QuestionId, UpdateQuestion,
 // };
-use crate::models::user::{Claims, OptionalClaims, User, UserSignup, KEYS};
+use crate::models::user::{Claims, OptionalClaims, User, UserSignup, KEYS, self};
 
 use crate::template::TEMPLATES;
 
@@ -155,3 +156,31 @@ pub async fn protected(claims: Claims) -> Result<String, AppError> {
         claims
     ))
 }
+
+pub async fn create_post(
+    State(mut am_database): State<Store>,
+    Json(post): Json<CreatePost>,
+) -> Result<Json<Post>, AppError> {
+    let new_post = am_database
+        .add_post(
+            post.title,
+            post.img_url,
+            post.explanation,
+            post.user_id
+        )
+        .await?;
+    Ok(Json(new_post))
+}
+
+pub async fn get_user_posts_by_id(
+    State(mut am_database): State<Store>,
+    Path(query): Path<i32>,
+) -> Result<Json<Vec<Post>>, AppError> {
+    let user_posts = am_database.get_user_posts_by_id(query).await?;
+    Ok(Json(user_posts))
+}
+
+// let new_answer = am_database
+// .add_answer(answer.content, answer.question_id)
+// .await?;
+// Ok(Json(new_answer))

@@ -15,7 +15,7 @@ pub mod db;
 pub mod error;
 pub mod handlers;
 pub mod layers;
-mod models;
+pub mod models;
 mod routes;
 mod template;
 

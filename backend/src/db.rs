@@ -7,14 +7,14 @@ use sqlx::{PgPool, Row};
 use tracing::info;
 
 use crate::error::AppError;
-use crate::models::post::{Post};
+use crate::models::post::{Post, PostId};
+use crate::models::user::{User, UserSignup};
 // use crate::models::answer::{Answer, AnswerId};
 // use crate::models::comment::{Comment, CommentId, CommentReference};
 // use crate::models::page::{AnswerWithComments, PagePackage, QuestionWithComments};
 // use crate::models::question::{
 //     GetQuestionById, IntoQuestionId, Question, QuestionId, UpdateQuestion,
 // };
-use crate::models::user::{User, UserSignup};
 
 #[derive(Clone)]
 pub struct Store {
@@ -51,6 +51,7 @@ impl Store {
     //     Ok(())
     // }
 
+    // Users
         pub async fn get_user(&self, email: &str) -> Result<User, AppError> {
         let user = sqlx::query_as::<_, User>(
             r#"
@@ -81,6 +82,76 @@ impl Store {
             ))
         }
     }
+
+    // Posts
+    pub async fn add_post(
+        &mut self,
+        title: String,
+        img_url: String,
+        explanation: String,
+        user_id: i32
+    ) -> Result<Post, AppError> {      
+        let res = sqlx::query(
+            r#"
+            INSERT INTO posts (title, explanation, img_url, user_id) 
+            VALUES ($1, $2, $3, $4)
+            RETURNING *
+            "#,
+        )
+            .bind(title)
+            .bind(explanation)
+            .bind(img_url)
+            .bind(user_id)
+            .fetch_one(&self.conn_pool)
+            .await?;
+
+        let post = Post {
+            id: PostId(res.get("id")),
+            title: res.get("title"),
+            explanation: res.get("explanation"),
+            img_url: res.get("img_url"),
+            user_id: res.get("user_id")
+        };
+
+        Ok(post)
+    }
+
+    pub async fn get_user_posts_by_id(
+        &mut self,
+        user_id: i32
+    ) -> Result<Vec<Post>, AppError> {
+        let res = sqlx::query(
+            r#"
+            SELECT * FROM posts WHERE user_id=$1
+            "#
+        )
+        .bind(user_id)
+        .fetch_all(&self.conn_pool)
+        .await?;
+
+        let posts: Vec<_> = res
+        .into_iter()
+        .map(|row| {
+            Post{
+                id: PostId(row.get("id")),
+                title: row.get("title"),
+                explanation: row.get("explanation"),
+                img_url: row.get("img_url"),
+                user_id: row.get("user_id")
+                // id: row.id.into(),
+                // title: row.title,
+                // explanation: row.explanation,
+                // img_url: row.img_url,
+                // user_id: row.user_id
+            }
+        })
+        .collect();
+
+        Ok(posts)
+    }
+
+    // Upvotes
+
 }
 
 #[cfg(test)]
