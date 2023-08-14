@@ -12,7 +12,7 @@ use crate::error::AppError;
 use serde_derive::{Deserialize, Serialize};
 use sqlx::decode;
 
-#[derive(Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Serialize, Deserialize, sqlx::FromRow, Clone, Debug)]
 pub struct User {
     pub email: String,
     pub password: String,
