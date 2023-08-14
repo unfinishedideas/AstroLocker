@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  postgres:
+    container_name: postgres_project
+    image: postgres:15-alpine
+    restart: always
+    ports:
+      - "8888:8888"
+    volumes:
+      - db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=rustweb_project
+      - POSTGRES_PASSWORD=rustweb_project
+      - POSTGRES_DB=postgres_project
+
+volumes:
+  db:
+    driver: local
+

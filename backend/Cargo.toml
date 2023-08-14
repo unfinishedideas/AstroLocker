@@ -3,11 +3,57 @@ name = "backend"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-axum = "0.6.19"
-serde = { version = "1.0.180", features = ["derive"] }
-serde_json = "1.0.104"
-tokio = { version = "1.29.1", features = ["full"] }
-uuid = { version = "1.4.1", features = ["v4", "serde"] }
+anyhow = "1.0"
+axum = { version = "0.6.2", features= ["headers"] }
+axum-macros = "0.3.1"
+axum-derive-error = "0.1.0"
+backtrace = "0.3.67"
+bcrypt = "0.14.0"
+dotenvy = "0.15.6"
+chrono = { version = "0.4.10", features = ["serde"] }
+derive_more = "0.99.2"
+futures = "0.3.1"
+header = "0.1.1"
+html-escape = "0.2.13"
+http = "0.2.9"
+http-serde = "1.1.2"
+hyper = "0.14.26"
+jsonwebtoken = "8.0.1"
+lazy_static = "1.4"
+mime = "0.3.17"
+once_cell = "1.18"
+r2d2 = "0.8.8"
+rand = "0.8.5"
+reqwest = { version = "0.11.13", features = ["json"] }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde_derive = "1.0"
+serde_json = "1.0"
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "chrono", "json"] }
+tera = "1"
+termcolor = "1.2.0"
+tokio = { version = "1.0", features = ["full"] }
+thiserror = "1.0"
+tower = "0.4.13"
+tower-http = { version = "0.4.0", features = ["cors", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1.3.0", features = ["serde", "v4"] }
+regex = "1.9.1"
+rust-argon2 = "1.0.0"
+paste = "1.0.14"
+cookie = "0.17.0"
+
+[package.metadata.commands]
+# Drops db, creates db, runs all normal migrations, not seeds
+reset = "sqlx database reset -y && sqlx migrate run --source ./tests/fixtures --ignore-missing "
+
+addMigration = { cmd = "sqlx migrate add -r  $name", args = ["name"] }
+# Note here we add WITHOUT the -r because we don't need to revert seeds
+addSeed = { cmd = "sqlx migrate add  --sequential --source ./tests/fixtures $name ", args = ["name"] }
+# We use --source to point the migrations to our test fixtures and ignore-missing to ignore the plain migrations
+seed = "sqlx migrate run --source ./tests/fixtures --ignore-missing"
+migrate = "sqlx migrate run --ignore-missing"
+revert = "sqlx migrate revert --ignore-missing"
+test = "cargo nextest run"
+
