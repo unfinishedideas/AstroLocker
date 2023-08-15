@@ -36,6 +36,9 @@ pub async fn app(pool: PgPool) -> Router {
         .route("/votes", post(handlers::create_vote))
         .route("/votes/:id", delete(handlers::delete_vote_by_id))
 
+        // NASA
+        // .route("/get_apod", post(handlers::get_nasa_post))
+
         // Misc
         .route("/*_", get(handle_404))
         

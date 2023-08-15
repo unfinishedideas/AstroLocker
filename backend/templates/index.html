@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heap Overrun</title>
+</head>
+<body>
+
+{% if is_logged_in %}
+<!--show dashboard-->
+<h2>Dashboard</h2>
+<ul>
+    <li><a href="/questions">View All Questions</a></li>
+    <li><a href="/answer">Answer A Question</a></li>
+</ul>
+
+{% else %}
+<!--show login form-->
+<h2>Login</h2>
+
+<form action="/login" method="post">
+    <label for="email">Email:</label>
+    <input type="text" id="email" name="email">
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password">
+    <input type="submit" value="Login">
+</form>
+
+{% endif %}
+
+</body>
+</html>

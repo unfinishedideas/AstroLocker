@@ -15,7 +15,7 @@ use crate::error::AppError;
 use crate::get_timestamp_after_8_hours;
 use crate::models::post::{Post, CreatePost, UpdatePost};
 use crate::models::vote::{Vote, VoteId,CreateVote};
-use crate::models::user::{Claims, OptionalClaims, User, UserSignup, KEYS, self};
+use crate::models::user::{Claims, OptionalClaims, User, UserSignup, KEYS};
 
 use crate::template::TEMPLATES;
 
@@ -25,10 +25,10 @@ pub async fn root(
     OptionalClaims(claims): OptionalClaims,
 ) -> Result<Html<String>, AppError> {
     let mut context = Context::new();
-    context.insert("name", "Casey");
+    // context.insert("name", "Casey");
 
     let template_name = if let Some(claims_data) = claims {
-        error!("Setting claims and is_logged_in is TRUE now");
+        error!("Setting claims and is_logged_in is TRUE now ");
         context.insert("claims", &claims_data);
         context.insert("is_logged_in", &true);
         // Get all the page data
