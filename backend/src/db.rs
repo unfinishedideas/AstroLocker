@@ -9,6 +9,7 @@ use tracing::info;
 use crate::error::AppError;
 use crate::models::post::{Post, PostId, UpdatePost};
 use crate::models::user::{User, UserSignup};
+use crate::models::vote::{Vote, VoteId, CreateVote};
 // use crate::models::answer::{Answer, AnswerId};
 // use crate::models::comment::{Comment, CommentId, CommentReference};
 // use crate::models::page::{AnswerWithComments, PagePackage, QuestionWithComments};
@@ -51,7 +52,7 @@ impl Store {
     //     Ok(())
     // }
 
-    // Users
+    // Users -----------------------------------------------------------------------------------------------------------
         pub async fn get_user(&self, email: &str) -> Result<User, AppError> {
         let user = sqlx::query_as::<_, User>(
             r#"
@@ -83,7 +84,7 @@ impl Store {
         }
     }
 
-    // Posts
+    // Posts -----------------------------------------------------------------------------------------------------------
     pub async fn get_all_posts(
         &mut self,
     ) -> Result<Vec<Post>, AppError> {
@@ -250,7 +251,45 @@ impl Store {
         Ok(posts)
     }
 
-    // Upvotes
+    // Votes -----------------------------------------------------------------------------------------------------------
+    pub async fn create_vote(
+        &mut self,
+        new_vote: CreateVote
+    ) -> Result<Vote, AppError> {
+        let res = sqlx::query(
+            r#"
+            INSERT INTO votes (post_id, user_id) VALUES($1, $2)
+            RETURNING *
+            "#
+        )
+        .bind(new_vote.post_id.0)
+        .bind(new_vote.user_id)
+        .fetch_one(&self.conn_pool)
+        .await?;
+        
+        let created_vote = Vote{
+            id: VoteId(res.get("id")),
+            post_id: PostId(res.get("post_id")),
+            user_id: res.get("user_id")
+        };
+
+        Ok(created_vote)
+    }
+
+    pub async fn delete_vote_by_id(&mut self, vote_id: i32) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+    DELETE FROM votes WHERE id = $1
+    "#,
+        )
+        .bind(vote_id)
+        .execute(&self.conn_pool)
+        .await
+        .unwrap();
+
+        Ok(())
+    }
+    
 
 }
 

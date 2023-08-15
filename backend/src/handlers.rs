@@ -14,10 +14,7 @@ use crate::db::Store;
 use crate::error::AppError;
 use crate::get_timestamp_after_8_hours;
 use crate::models::post::{Post, CreatePost, UpdatePost};
-// use crate::models::answer::{Answer, CreateAnswer};
-// use crate::models::question::{
-//     CreateQuestion, GetQuestionById, Question, QuestionId, UpdateQuestion,
-// };
+use crate::models::vote::{Vote, VoteId,CreateVote};
 use crate::models::user::{Claims, OptionalClaims, User, UserSignup, KEYS, self};
 
 use crate::template::TEMPLATES;
@@ -157,6 +154,8 @@ pub async fn protected(claims: Claims) -> Result<String, AppError> {
     ))
 }
 
+// Posts ---------------------------------------------------------------------------------------------------------------
+
 pub async fn get_all_posts(
     State(mut am_database): State<Store>,
 ) -> Result<Json<Vec<Post>>, AppError> {
@@ -213,3 +212,20 @@ pub async fn get_user_posts_by_id(
     Ok(Json(user_posts))
 }
 
+// Votes ---------------------------------------------------------------------------------------------------------------
+pub async fn create_vote(
+    State(mut am_database): State<Store>,
+    Json(vote): Json<CreateVote>
+) -> Result<Json<Vote>, AppError> {
+    let new_vote = am_database.create_vote(vote).await?;
+
+    Ok(Json(new_vote))
+}
+
+pub async fn delete_vote_by_id(
+    State(mut am_database): State<Store>,
+    Path(query): Path<i32>,
+) -> Result<(), AppError> {
+    am_database.delete_vote_by_id(query).await?;
+    Ok(())
+}
