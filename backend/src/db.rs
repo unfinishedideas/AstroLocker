@@ -7,7 +7,7 @@ use sqlx::{PgPool, Row};
 use tracing::info;
 
 use crate::error::AppError;
-use crate::models::post::{Post, PostId, UpdatePost};
+use crate::models::post::{Post, PostId, CreatePost, UpdatePost};
 use crate::models::user::{User, UserSignup};
 use crate::models::vote::{Vote, VoteId, CreateVote};
 // use crate::models::answer::{Answer, AnswerId};
@@ -102,9 +102,10 @@ impl Store {
             Post{
                 id: PostId(row.get("id")),
                 title: row.get("title"),
+                query_string: row.get("query_string"),
                 explanation: row.get("explanation"),
                 img_url: row.get("img_url"),
-                user_id: row.get("user_id")
+                apod_date: row.get("apod_date")
             }
         })
         .collect();
@@ -128,9 +129,10 @@ impl Store {
         let post = Post {
             id: PostId(res.get("id")),
             title: res.get("title"),
+            query_string: res.get("query_string"),
             explanation: res.get("explanation"),
             img_url: res.get("img_url"),
-            user_id: res.get("user_id")
+            apod_date: res.get("apod_date")
         };
 
         Ok(post)
@@ -138,31 +140,30 @@ impl Store {
 
     pub async fn add_post(
         &mut self,
-        title: String,
-        img_url: String,
-        explanation: String,
-        user_id: i32
+        new_post: CreatePost
     ) -> Result<Post, AppError> {      
         let res = sqlx::query(
             r#"
-            INSERT INTO posts (title, explanation, img_url, user_id) 
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO posts (title, query_string, explanation, img_url, apod_date) 
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING *
             "#,
         )
-            .bind(title)
-            .bind(explanation)
-            .bind(img_url)
-            .bind(user_id)
+            .bind(new_post.title)
+            .bind(new_post.query_string)
+            .bind(new_post.explanation)
+            .bind(new_post.img_url)
+            .bind(new_post.apod_date)
             .fetch_one(&self.conn_pool)
             .await?;
 
         let post = Post {
             id: PostId(res.get("id")),
             title: res.get("title"),
+            query_string: res.get("query_string"),
             explanation: res.get("explanation"),
             img_url: res.get("img_url"),
-            user_id: res.get("user_id")
+            apod_date: res.get("apod_date")
         };
 
         Ok(post)
@@ -189,14 +190,15 @@ impl Store {
         sqlx::query(
             r#"
             UPDATE posts
-            SET title = $1, explanation = $2, img_url = $3, user_id = $4
-            WHERE id = $5
+            SET title = $1, query_string = $2, explanation = $3, img_url = $4, apod_date = $5
+            WHERE id = $6
             "#,
         )
             .bind(new_post.title)
+            .bind(new_post.query_string)
             .bind(new_post.explanation)
             .bind(new_post.img_url)
-            .bind(new_post.user_id)
+            .bind(new_post.apod_date)
             .bind(new_post.id.0)
         .execute(&self.conn_pool)
             .await?;
@@ -213,9 +215,10 @@ impl Store {
         let new_post = Post {
             id: PostId(res.get("id")),
             title: res.get("title"),
+            query_string: res.get("query_string"),
             explanation: res.get("explanation"),
             img_url: res.get("img_url"),
-            user_id: res.get("user_id")
+            apod_date: res.get("apod_date")
         };
 
         Ok(new_post)
@@ -228,7 +231,10 @@ impl Store {
     ) -> Result<Vec<Post>, AppError> {
         let res = sqlx::query(
             r#"
-            SELECT * FROM posts WHERE user_id=$1
+            SELECT * FROM posts
+            INNER JOIN votes
+            ON posts.id = votes.post_id
+            WHERE user_id=$1;
             "#
         )
         .bind(user_id)
@@ -241,9 +247,10 @@ impl Store {
             Post{
                 id: PostId(row.get("id")),
                 title: row.get("title"),
+                query_string: row.get("query_string"),
                 explanation: row.get("explanation"),
                 img_url: row.get("img_url"),
-                user_id: row.get("user_id")
+                apod_date: row.get("apod_date")
             }
         })
         .collect();

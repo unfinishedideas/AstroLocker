@@ -52,7 +52,7 @@ pub async fn root(
     Ok(Html(rendered))
 }
 
-
+// User ----------------------------------------------------------------------------------------------------------------
 pub async fn register(
     State(mut database): State<Store>,
     Json(mut credentials): Json<UserSignup>,
@@ -176,12 +176,7 @@ pub async fn create_post(
     Json(post): Json<CreatePost>,
 ) -> Result<Json<Post>, AppError> {
     let new_post = am_database
-        .add_post(
-            post.title,
-            post.img_url,
-            post.explanation,
-            post.user_id
-        )
+        .add_post(post)
         .await?;
     Ok(Json(new_post))
 }
