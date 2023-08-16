@@ -2,7 +2,9 @@ use reqwest::Client;
 use backend::models::post::{CreatePost, UpdatePost, PostId};  
 use backend::models::vote::{CreateVote, VoteId};
 use backend::models::user::{UserSignup};
+use backend::models::nasaquery::{NasaQuery};
 use chrono::{Datelike, Timelike, Utc};
+use serde_json::Value;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -44,14 +46,14 @@ async fn main() -> anyhow::Result<()> {
 
     
     // // Get post by id
-    // let res = client.get("http://localhost:3000/posts/2")
+    // let res = client.get("http://localhost:3000/posts/1")
     //     .send()
     //     .await?;
 
     // // Get all Posts
-    let res = client.get("http://localhost:3000/posts")
-        .send()
-        .await?;
+    // let res = client.get("http://localhost:3000/posts")
+    //     .send()
+    //     .await?;
 
     // // Update a post
     // let update_post = UpdatePost {
@@ -90,7 +92,34 @@ async fn main() -> anyhow::Result<()> {
     // .send()
     // .await?;
 
-    let body = res.text().await?;
-    println!("{}", body);
-    Ok(())
+    
+    
+    // NASA Query
+    // let query = NasaQuery {
+    //     query_string: "1999-08-09".into()
+    // };
+    // let res = client.post("http://localhost:3000/get_apod")
+    // .json(&query)
+    // .send()
+    // .await?;
+
+    // let body = res.text().await?;
+    // println!("{}", body);
+    // Ok(())
+
+    // println!("{}", body.url);
+
+
+
+
+    // let res = reqwest::get("http://localhost:3000/posts/1")
+    //     .await?
+    //     .text()
+    //     .await?;
+
+    // let response = serde_json::from_str::<Value>(&res).unwrap();
+
+    // println!("Title: {}", response["title"].as_str().unwrap());
+//     println!("Title: {}", response["title"].to_string());
+//     Ok(())
 }

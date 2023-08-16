@@ -231,14 +231,14 @@ pub async fn get_nasa_post(
     Json(query): Json<NasaQuery>
 ) -> Result<Json<Post>, AppError> {
     // Check to see if post is already in DB
-    // let is_cached = am_database.check_cache_by_query_string(query).await?;
-    // if is_cached == true {
-    //     let cached_post = am_database.get_post_by_query_string(query).await?;
-    //     return Ok(Json(cached_post));
-    // }
-    // // Otherwise, call NASA and create a post for it
-    // else {
-        let date_value = query.query_string;
+    let is_cached = am_database.check_cache_by_query_string(query.clone()).await?;
+    if is_cached == true {
+        let cached_post = am_database.get_post_by_query_string(query.clone()).await?;
+        return Ok(Json(cached_post));
+    }
+    // Otherwise, call NASA and create a post for it
+    else {
+        let date_value = &query.query_string;
         let key = std::env::var("NASA_API_KEY").unwrap();
         let query_string = format!("https://api.nasa.gov/planetary/apod/?api_key={key}&date={date_value}");
         println!("Query String: {}", query_string);
@@ -251,36 +251,17 @@ pub async fn get_nasa_post(
 
         let response = serde_json::from_str::<Value>(&res).unwrap();
 
-        // let post_to_add
-        print!("{}", response);
+        // .as_str().unwrap().to_string() seems really stupid but it's the only way I was able
+        // to get it to work without adding quotation marks to my fields.
+        let post_to_add = CreatePost {
+            title: response["title"].as_str().unwrap().to_string(),
+            explanation: response["explanation"].as_str().unwrap().to_string(),
+            query_string: query.query_string,
+            img_url: response["url"].as_str().unwrap().to_string(),
+            apod_date: response["date"].as_str().unwrap().to_string()
+        };
 
-        // let new_post = am_database.add_post(post_to_add).await?;
-        // Ok(Json(new_post))
-
-
-        let delete_this_post = am_database.get_post_by_id(1).await?;
-        Ok(Json(delete_this_post))
-    // }
+        let new_post = am_database.add_post(post_to_add).await?;
+        Ok(Json(new_post))
+    }
 }
-
-// pub async fn call_nasa(query_string: String) -> Result<CreatePost, AppError> {
-//     let client = Client::new();
-//     let key = std::env::var("NASA_API_KEY").unwrap();
-//     let nasa_query = format!("GET https://api.nasa.gov/planetary/apod/?date={query_string}?api_key={key}");
-//     let res = client.post(nasa_query)
-//         .send()
-//         .await;
-//     let body : String = res.text().await?;
-//     let parsed_json: Value = serde_json::from_str(&body)?;
-    
-//     println!("{}", &body);    // REMOVE THIS <=====================================================================
-
-//     let post_to_add = CreatePost {
-//         title: parsed_json["title"],
-//         query_string: query_string,
-//         explanation: parsed_json["explanation"],
-//         img_url: parsed_json["url"],
-//         apod_date: parsed_json["date"]
-//     };
-//     post_to_add
-// } 
