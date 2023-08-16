@@ -67,6 +67,17 @@ impl Store {
         Ok(user)
     }
 
+    pub async fn get_user_id_by_email(&self, email: String) -> Result<i32, AppError> {
+        let res = sqlx::query(r#"SELECT id FROM users WHERE email=$1"#)
+        .bind(email)
+        .fetch_one(&self.conn_pool)
+        .await?;
+
+        let id :i32 = res.get("id");
+
+        Ok(id)
+    }
+
     pub async fn create_user(&self, user: UserSignup) -> Result<Json<Value>, AppError> {
         let result = sqlx::query("INSERT INTO users(email, password, is_banned) values ($1, $2, false)")
             .bind(&user.email)

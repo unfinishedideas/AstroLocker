@@ -46,7 +46,7 @@
 <!-- Main Page ----------------------------------------------------------------------------------------------------- -->
     <h2>Get a new APOD</h2>
     <form action="/get_apod" method="post">
-      <input type="date" name="query_string"/>
+      <input type="date" name="query_string" value="2023-08-09"/>
       <input type="submit" value="What was the APOD on this date"/>
     </form>
 
@@ -61,7 +61,9 @@
       <img src="{{post.img_url}}" alt="{{post.explanation}}"></img>
       <p>{{post.explanation}}</p>
       <form action="/votes" method="post">
-        <input value="{{post.id}}" style="display: none"/>
+        <!-- This has got to be terribly insecure ;) -->
+        <input name="post_id" value="{{post.id}}" style="display: none"/>
+        <input name="user_id" value="{{current_user_id}}" style="display: none"/>
         <input type="submit" value="I like this!"/>
       </form>
       <hr>

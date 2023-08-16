@@ -30,10 +30,10 @@ pub async fn root(
     context.insert("is_banned", &false);
 
     let template_name = if let Some(claims_data) = claims {
-        // error!("Setting claims and is_logged_in is TRUE now");
         context.insert("claims", &claims_data);
         context.insert("is_logged_in", &true);
-
+        let current_user_id = am_database.get_user_id_by_email(claims_data.email.clone()).await?;
+        context.insert("current_user_id", &current_user_id);
         
         // determine if banned
         let is_banned = am_database.determine_if_user_banned(claims_data.email.clone()).await?;
@@ -51,14 +51,12 @@ pub async fn root(
             // Get all the post data
             let posts = am_database.get_all_posts().await?;
             context.insert("all_posts", &posts);
-    
-            "pages.html" // Use the new template when logged in
+            "main.html"
         }
     } else {
         // Handle the case where the user isn't logged in
-        // error!("is_logged_in is FALSE now");
         context.insert("is_logged_in", &false);
-        "index.html" // Use the original template when not logged in
+        "index.html"
     };
 
     let rendered = TEMPLATES
@@ -149,6 +147,8 @@ pub async fn register(
     // Ok(new_user)
 }
 
+
+
 // TODO: Add redirect for failed login!
 pub async fn login(
     State(mut database): State<Store>,
@@ -187,6 +187,7 @@ pub async fn login(
 
     let mut response = Response::builder()
         .status(StatusCode::FOUND)
+        // .body()
         .body(Body::empty())
         .unwrap();
 
@@ -256,9 +257,13 @@ pub async fn get_user_posts_by_id(
 // Votes ---------------------------------------------------------------------------------------------------------------
 pub async fn create_vote(
     State(mut am_database): State<Store>,
-    Json(vote): Json<CreateVote>
+    Form(vote): Form<CreateVote>
 ) -> Result<Json<Vote>, AppError> {
-    let new_vote = am_database.create_vote(vote).await?;
+    let new_vote = CreateVote {
+        post_id: vote.post_id,
+        user_id: vote.user_id
+    };
+    let new_vote = am_database.create_vote(new_vote).await?;
 
     Ok(Json(new_vote))
 }
