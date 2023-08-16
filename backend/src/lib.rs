@@ -16,6 +16,7 @@ pub mod error;
 pub mod handlers;
 pub mod layers;
 pub mod models;
+pub mod nasa;
 mod routes;
 mod template;
 

@@ -13,6 +13,7 @@ pub enum AppError {
     UserAlreadyExists,
     InvalidToken,
     InternalServerError,
+    NASAError,
     #[allow(dead_code)]
     Any(anyhow::Error),
 }
@@ -42,6 +43,10 @@ impl IntoResponse for AppError {
             AppError::InternalServerError => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Something terrible happened".to_string(),
+            ),
+            AppError::NASAError => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Something terrible happened with NASA".to_string(),
             ),
         };
 

@@ -10,6 +10,7 @@ use crate::error::AppError;
 use crate::models::post::{Post, PostId, CreatePost, UpdatePost};
 use crate::models::user::{User, UserSignup};
 use crate::models::vote::{Vote, VoteId, CreateVote};
+use crate::models::nasaquery::NasaQuery;
 // use crate::models::answer::{Answer, AnswerId};
 // use crate::models::comment::{Comment, CommentId, CommentReference};
 // use crate::models::page::{AnswerWithComments, PagePackage, QuestionWithComments};
@@ -224,6 +225,52 @@ impl Store {
         Ok(new_post)
     }
 
+    pub async fn get_post_by_query_string(
+        &mut self,
+        query: NasaQuery
+    ) -> Result<Post, AppError> {
+        let res = sqlx::query(
+            r#"
+            SELECT * FROM posts WHERE query_string=$1
+            "#
+        )
+        .bind(query.query_string)
+        .fetch_one(&self.conn_pool)
+        .await?;
+
+        let post = Post {
+            id: PostId(res.get("id")),
+            title: res.get("title"),
+            query_string: res.get("query_string"),
+            explanation: res.get("explanation"),
+            img_url: res.get("img_url"),
+            apod_date: res.get("apod_date")
+        };
+
+        Ok(post)
+    }
+
+    pub async fn check_cache_by_query_string(
+        &mut self,
+        query: NasaQuery
+    ) -> Result<bool, AppError> {
+        let res = sqlx::query!(
+            r#"
+            SELECT EXISTS ( SELECT * FROM posts WHERE query_string=$1);
+            "#,
+            query.query_string
+        )
+        .fetch_one(&self.conn_pool)
+        .await?;
+
+        println!("{:?}", res);
+        if res.exists == Some(false)
+        {
+            Ok(false)
+        } else {
+            Ok(true)
+        }
+    }
 
     pub async fn get_user_posts_by_id(
         &mut self,

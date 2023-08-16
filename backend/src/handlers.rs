@@ -8,14 +8,15 @@ use hyper::Body;
 use jsonwebtoken::Header;
 use serde_json::{json, Value};
 use tera::Context;
-use tracing::error;
+use tracing::{error, info};
 
 use crate::db::Store;
 use crate::error::AppError;
 use crate::get_timestamp_after_8_hours;
 use crate::models::post::{Post, CreatePost, UpdatePost};
-use crate::models::vote::{Vote, VoteId,CreateVote};
+use crate::models::vote::{Vote, CreateVote};
 use crate::models::user::{Claims, OptionalClaims, User, UserSignup, KEYS};
+use crate::models::nasaquery::NasaQuery;
 
 use crate::template::TEMPLATES;
 
@@ -28,7 +29,7 @@ pub async fn root(
     // context.insert("name", "Casey");
 
     let template_name = if let Some(claims_data) = claims {
-        error!("Setting claims and is_logged_in is TRUE now ");
+        error!("Setting claims and is_logged_in is TRUE now");
         context.insert("claims", &claims_data);
         context.insert("is_logged_in", &true);
         // Get all the page data
@@ -224,3 +225,62 @@ pub async fn delete_vote_by_id(
     am_database.delete_vote_by_id(query).await?;
     Ok(())
 }
+
+pub async fn get_nasa_post(
+    State(mut am_database): State<Store>,
+    Json(query): Json<NasaQuery>
+) -> Result<Json<Post>, AppError> {
+    // Check to see if post is already in DB
+    // let is_cached = am_database.check_cache_by_query_string(query).await?;
+    // if is_cached == true {
+    //     let cached_post = am_database.get_post_by_query_string(query).await?;
+    //     return Ok(Json(cached_post));
+    // }
+    // // Otherwise, call NASA and create a post for it
+    // else {
+        let date_value = query.query_string;
+        let key = std::env::var("NASA_API_KEY").unwrap();
+        let query_string = format!("https://api.nasa.gov/planetary/apod/?api_key={key}&date={date_value}");
+        println!("Query String: {}", query_string);
+        let res = reqwest::get(&query_string)
+            .await
+            .map_err(|_| AppError::InternalServerError)?
+            .text()
+            .await
+            .map_err(|_| AppError::InternalServerError)?;
+
+        let response = serde_json::from_str::<Value>(&res).unwrap();
+
+        // let post_to_add
+        print!("{}", response);
+
+        // let new_post = am_database.add_post(post_to_add).await?;
+        // Ok(Json(new_post))
+
+
+        let delete_this_post = am_database.get_post_by_id(1).await?;
+        Ok(Json(delete_this_post))
+    // }
+}
+
+// pub async fn call_nasa(query_string: String) -> Result<CreatePost, AppError> {
+//     let client = Client::new();
+//     let key = std::env::var("NASA_API_KEY").unwrap();
+//     let nasa_query = format!("GET https://api.nasa.gov/planetary/apod/?date={query_string}?api_key={key}");
+//     let res = client.post(nasa_query)
+//         .send()
+//         .await;
+//     let body : String = res.text().await?;
+//     let parsed_json: Value = serde_json::from_str(&body)?;
+    
+//     println!("{}", &body);    // REMOVE THIS <=====================================================================
+
+//     let post_to_add = CreatePost {
+//         title: parsed_json["title"],
+//         query_string: query_string,
+//         explanation: parsed_json["explanation"],
+//         img_url: parsed_json["url"],
+//         apod_date: parsed_json["date"]
+//     };
+//     post_to_add
+// } 
