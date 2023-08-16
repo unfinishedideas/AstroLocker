@@ -15,7 +15,7 @@ use crate::error::AppError;
 use crate::get_timestamp_after_8_hours;
 use crate::models::post::{Post, CreatePost, UpdatePost};
 use crate::models::vote::{Vote, CreateVote};
-use crate::models::user::{Claims, OptionalClaims, User, UserSignup, KEYS};
+use crate::models::user::{Claims, OptionalClaims, User, UserSignup, KEYS, UserEmail};
 use crate::models::nasaquery::NasaQuery;
 
 use crate::template::TEMPLATES;
@@ -309,4 +309,37 @@ pub async fn get_nasa_post(
         let new_post = am_database.add_post(post_to_add).await?;
         Ok(Json(new_post))
     }
+}
+
+// Admin ---------------------------------------------------------------------------------------------------------------
+pub async fn ban_user(
+    State(mut am_database): State<Store>,
+    Form(email_to_ban): Form<UserEmail>
+) -> Result<(), AppError> {
+    am_database.ban_user_by_email(email_to_ban.email).await?;
+    Ok(())
+}
+
+pub async fn unban_user(
+    State(mut am_database): State<Store>,
+    Form(email_to_unban): Form<UserEmail>
+) -> Result<(), AppError> {
+    am_database.unban_user_by_email(email_to_unban.email).await?;
+    Ok(())
+}
+
+pub async fn promote_admin(
+    State(mut am_database): State<Store>,
+    Form(email_to_admin): Form<UserEmail>
+) -> Result<(), AppError> {
+    am_database.promote_admin_by_email(email_to_admin.email).await?;
+    Ok(())
+}
+
+pub async fn demote_admin(
+    State(mut am_database): State<Store>,
+    Form(email_to_admin): Form<UserEmail>
+) -> Result<(), AppError> {
+    am_database.demote_admin_by_email(email_to_admin.email).await?;
+    Ok(())
 }

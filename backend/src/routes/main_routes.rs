@@ -16,7 +16,6 @@ pub async fn app(pool: PgPool) -> Router {
     let (cors_layer, trace_layer) = layers::get_layers();
 
     Router::new()
-        // The router matches these FROM TOP TO BOTTOM explicitly!
         .route("/", get(root))
 
         // User login / registration
@@ -41,6 +40,12 @@ pub async fn app(pool: PgPool) -> Router {
 
         // Misc
         .route("/*_", get(handle_404))
+
+        // Admin
+        .route("/ban", post(handlers::ban_user))
+        .route("/unban", post(handlers::unban_user))
+        .route("/promote", post(handlers::promote_admin))
+        .route("/demote", post(handlers::demote_admin))
         
         // .merge(comment_routes())
         .layer(cors_layer)

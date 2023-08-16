@@ -370,7 +370,90 @@ impl Store {
         Ok(())
     }
     
+    // Admin -----------------------------------------------------------------------------------------------------------
+    pub async fn ban_user_by_email(&mut self, email_to_ban: String) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+            UPDATE users
+            SET is_banned=true
+            WHERE email = $1
+            "#,
+        )
+        .bind(email_to_ban)
+        .execute(&self.conn_pool)
+        .await?;
 
+        Ok(())
+    }
+
+    pub async fn unban_user_by_email(&mut self, email_to_ban: String) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+            UPDATE users
+            SET is_banned=false
+            WHERE email = $1
+            "#,
+        )
+        .bind(email_to_ban)
+        .execute(&self.conn_pool)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn promote_admin_by_email(&mut self, email_to_promote: String) -> Result<(), AppError> {
+        // Get UserId
+        let res = sqlx::query(
+            r#"
+            SELECT id FROM users WHERE email=$1
+            "#
+        )
+        .bind(email_to_promote)
+        .fetch_one(&self.conn_pool)
+        .await?;
+
+        let user_id: i32 = res.get("id");
+
+        // Add to Admins
+        sqlx::query(
+            r#"
+            INSERT INTO admins (admin_user_id) VALUES ($1)
+            "#
+        )
+        .bind(user_id)
+        .execute(&self.conn_pool)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn demote_admin_by_email(&mut self, email_to_demote: String) -> Result<(), AppError> {
+        // Get UserId
+        let res = sqlx::query(
+            r#"
+            SELECT id FROM users WHERE email=$1
+            "#
+        )
+        .bind(email_to_demote)
+        .fetch_one(&self.conn_pool)
+        .await?;
+
+        let user_id: i32 = res.get("id");
+
+        // Remove from Admins
+        sqlx::query(
+            r#"
+            DELETE FROM admins WHERE admin_user_id=$1
+            "#
+        )
+        .bind(user_id)
+        .execute(&self.conn_pool)
+        .await?;
+
+        Ok(())
+    }
+
+    // pub async fn make_user_admin()
 }
 
 #[cfg(test)]

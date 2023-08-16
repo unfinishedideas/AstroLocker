@@ -25,6 +25,11 @@ pub struct UserSignup {
     pub confirm_password: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, sqlx::FromRow)]
+pub struct UserEmail {
+    pub email: String,
+}
+
 pub struct LoggedInUser {
     pub token: Claims,
 }
