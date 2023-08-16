@@ -26,17 +26,34 @@ pub async fn root(
     OptionalClaims(claims): OptionalClaims,
 ) -> Result<Html<String>, AppError> {
     let mut context = Context::new();
-    // context.insert("name", "Casey");
+    context.insert("is_admin", &false);
+    context.insert("is_banned", &false);
 
     let template_name = if let Some(claims_data) = claims {
         error!("Setting claims and is_logged_in is TRUE now");
         context.insert("claims", &claims_data);
         context.insert("is_logged_in", &true);
-        // Get all the page data
-        // let page_packages = am_database.get_all_question_pages().await?;
-        // context.insert("page_packages", &page_packages);
 
-        "pages.html" // Use the new template when logged in
+        
+        // determine if banned
+        let is_banned = am_database.determine_if_user_banned(claims_data.email.clone()).await?;
+        if is_banned == true {
+            context.insert("is_banned", &true);
+            "banned.html"
+        }
+        else {
+            // determine if admin
+            let is_admin = am_database.determine_if_user_admin(claims_data.email).await?;
+            if is_admin == true {
+                context.insert("is_admin", &true);
+            }
+
+            // Get all the page data
+            // let page_packages = am_database.get_all_question_pages().await?;
+            // context.insert("page_packages", &page_packages);
+    
+            "pages.html" // Use the new template when logged in
+        }
     } else {
         // Handle the case where the user isn't logged in
         error!("is_logged_in is FALSE now");
@@ -54,6 +71,7 @@ pub async fn root(
 }
 
 // User ----------------------------------------------------------------------------------------------------------------
+
 pub async fn register(
     State(mut database): State<Store>,
     Json(mut credentials): Json<UserSignup>,

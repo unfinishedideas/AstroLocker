@@ -103,11 +103,24 @@ async fn main() -> anyhow::Result<()> {
     // .send()
     // .await?;
 
-    // let body = res.text().await?;
-    // println!("{}", body);
-    // Ok(())
 
-    // println!("{}", body.url);
+    // make a user
+    let new_user = UserSignup {
+        email: "hey@what.com".into(),
+        password: "12345".into(),
+        confirm_password: "12345".into()
+    };
+
+    let res = client.post("http://localhost:3000/users")
+    .json(&new_user)
+    .send()
+    .await?;
+
+    let body = res.text().await?;
+    println!("{}", body);
+    Ok(())
+
+
 
 
 
