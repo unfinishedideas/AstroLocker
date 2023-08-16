@@ -48,9 +48,9 @@ pub async fn root(
                 context.insert("is_admin", &true);
             }
 
-            // Get all the page data
-            // let page_packages = am_database.get_all_question_pages().await?;
-            // context.insert("page_packages", &page_packages);
+            // Get all the post data
+            let posts = am_database.get_all_posts().await?;
+            context.insert("all_posts", &posts);
     
             "pages.html" // Use the new template when logged in
         }
@@ -149,6 +149,7 @@ pub async fn register(
     // Ok(new_user)
 }
 
+// TODO: Add redirect for failed login!
 pub async fn login(
     State(mut database): State<Store>,
     Form(creds): Form<User>,
@@ -273,7 +274,7 @@ pub async fn delete_vote_by_id(
 // NASA ----------------------------------------------------------------------------------------------------------------
 pub async fn get_nasa_post(
     State(mut am_database): State<Store>,
-    Json(query): Json<NasaQuery>
+    Form(query): Form<NasaQuery>
 ) -> Result<Json<Post>, AppError> {
     // Check to see if post is already in DB
     let is_cached = am_database.check_cache_by_query_string(query.clone()).await?;
@@ -312,6 +313,7 @@ pub async fn get_nasa_post(
 }
 
 // Admin ---------------------------------------------------------------------------------------------------------------
+// TODO: Add redirects to these!
 pub async fn ban_user(
     State(mut am_database): State<Store>,
     Form(email_to_ban): Form<UserEmail>

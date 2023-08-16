@@ -1,7 +1,17 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AstroLocker</title>
+  </head>
+  <body>
+    <h1>Astro Locker</h1>
     {% if is_admin %}
-    <h2>Admin Panel</h2>
+    
+<!-- Admin Panel --------------------------------------------------------------------------------------------------- -->
     <div>
+      <h2>Admin Panel</h2>
       <h3>Ban User</h3>
       <form action="/ban" method="post">
         <label for="email">Email:</label>
@@ -20,17 +30,42 @@
       <form action="/promote" method="post">
         <label for="email">Email:</label>
         <input type="text" id="email" name="email" />
-        <input type="submit" value="Admin" />
+        <input type="submit" value="Make Admin" />
       </form>
 
       <h3>Demote Admin</h3>
       <form action="/demote" method="post">
         <label for="email">Email:</label>
         <input type="text" id="email" name="email" />
-        <input type="submit" value="Admin" />
+        <input type="submit" value="Remove Admin" />
       </form>
     </div>
-
+    
     {% endif %}
-    <h1>Hmm you shouldn't be here unless you are logged in!</h1>
+    
+<!-- Main Page ----------------------------------------------------------------------------------------------------- -->
+    <h2>Get a new APOD</h2>
+    <form action="/get_apod" method="post">
+      <input type="date" name="query_string"/>
+      <input type="submit" value="What was the APOD on this date"/>
+    </form>
+
+    <h2>Popular Pictures</h2>
+
+    <h2>All Pictures</h2>
+
+    {% for post in all_posts %}
+    <div class="post">
+      <h3>{{post.title}}</h3>
+      <p>{{post.apod_date}}</p>
+      <img src="{{post.img_url}}" alt="{{post.explanation}}"></img>
+      <p>{{post.explanation}}</p>
+      <form action="/votes" method="post">
+        <input value="{{post.id}}" style="display: none"/>
+        <input type="submit" value="I like this!"/>
+      </form>
+      <hr>
+    </div>
+    {% endfor %}
+
 </html>

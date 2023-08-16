@@ -51,9 +51,9 @@ async fn main() -> anyhow::Result<()> {
     //     .await?;
 
     // // Get all Posts
-    // let res = client.get("http://localhost:3000/posts")
-    //     .send()
-    //     .await?;
+    let res = client.get("http://localhost:3000/posts")
+        .send()
+        .await?;
 
     // // Update a post
     // let update_post = UpdatePost {
@@ -116,9 +116,9 @@ async fn main() -> anyhow::Result<()> {
     // .send()
     // .await?;
 
-    // let body = res.text().await?;
-    // println!("{}", body);
-    // Ok(())
+    let body = res.text().await?;
+    println!("{}", body);
+    Ok(())
 
 
 
