@@ -68,7 +68,6 @@ impl Store {
     }
 
     pub async fn create_user(&self, user: UserSignup) -> Result<Json<Value>, AppError> {
-        // TODO: Encrypt/bcrypt user passwords
         let result = sqlx::query("INSERT INTO users(email, password, is_banned) values ($1, $2, false)")
             .bind(&user.email)
             .bind(&user.password)
@@ -86,7 +85,6 @@ impl Store {
     }
 
     pub async fn determine_if_user_banned(&mut self, email: String) -> Result<bool, AppError> {
-        println!("is he banned?"); // remove this! =====================================================================
         let res = sqlx::query(r#"SELECT * FROM users WHERE email=$1"#)
         .bind(email)
         .fetch_one(&self.conn_pool)
@@ -95,7 +93,6 @@ impl Store {
     }
 
     pub async fn determine_if_user_admin(&mut self, email: String) -> Result<bool, AppError> {
-        println!("is he an admin?"); // remove this! =====================================================================
         let res = sqlx::query(r#"
             SELECT * FROM users 
             INNER JOIN admins 
@@ -107,11 +104,9 @@ impl Store {
         .await?;
 
         if res.is_none(){
-            println!("Not an admin!"); // remove this! =====================================================================
             Ok(false)
         }
         else {
-            println!("Is an admin!"); // remove this! =====================================================================
             Ok(true)
         }
     }

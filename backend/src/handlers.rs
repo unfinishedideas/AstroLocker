@@ -30,7 +30,7 @@ pub async fn root(
     context.insert("is_banned", &false);
 
     let template_name = if let Some(claims_data) = claims {
-        error!("Setting claims and is_logged_in is TRUE now");
+        // error!("Setting claims and is_logged_in is TRUE now");
         context.insert("claims", &claims_data);
         context.insert("is_logged_in", &true);
 
@@ -56,7 +56,7 @@ pub async fn root(
         }
     } else {
         // Handle the case where the user isn't logged in
-        error!("is_logged_in is FALSE now");
+        // error!("is_logged_in is FALSE now");
         context.insert("is_logged_in", &false);
         "index.html" // Use the original template when not logged in
     };
@@ -70,14 +70,19 @@ pub async fn root(
     Ok(Html(rendered))
 }
 
-// User ----------------------------------------------------------------------------------------------------------------
+pub async fn protected(claims: Claims) -> Result<String, AppError> {
+    Ok(format!(
+        "Welcome to the PROTECTED area :) \n Your claim data is: {}",
+        claims
+    ))
+}
 
+// User ----------------------------------------------------------------------------------------------------------------
 pub async fn register(
     State(mut database): State<Store>,
-    Json(mut credentials): Json<UserSignup>,
-) -> Result<Json<Value>, AppError> {
+    Form(mut credentials): Form<UserSignup>,
+) -> Result<Response<Body>, AppError> {
     // We should also check to validate other things at some point like email address being in right format
-
     if credentials.email.is_empty() || credentials.password.is_empty() {
         return Err(AppError::MissingCredentials);
     }
@@ -111,8 +116,37 @@ pub async fn register(
 
     credentials.password = hashed_password;
 
-    let new_user = database.create_user(credentials).await?;
-    Ok(new_user)
+    // TODO: Change create_user function to not return a user
+    let new_user = database.create_user(credentials.clone()).await?;
+
+    // at this point we've authenticated the user's identity
+    // create JWT to return
+    let claims = Claims {
+        id: 0,
+        email: credentials.email.to_owned(),
+        exp: get_timestamp_after_8_hours(),
+    };
+
+    let token = jsonwebtoken::encode(&Header::default(), &claims, &KEYS.encoding)
+        .map_err(|_| AppError::MissingCredentials)?;
+
+    let cookie = cookie::Cookie::build("jwt", token).http_only(true).finish();
+
+    let mut response = Response::builder()
+        .status(StatusCode::FOUND)
+        .body(Body::empty())
+        .unwrap();
+
+    response
+        .headers_mut()
+        .insert(LOCATION, HeaderValue::from_static("/"));
+    response.headers_mut().insert(
+        SET_COOKIE,
+        HeaderValue::from_str(&cookie.to_string()).unwrap(),
+    );
+
+    Ok(response)
+    // Ok(new_user)
 }
 
 pub async fn login(
@@ -166,15 +200,7 @@ pub async fn login(
     Ok(response)
 }
 
-pub async fn protected(claims: Claims) -> Result<String, AppError> {
-    Ok(format!(
-        "Welcome to the PROTECTED area :) \n Your claim data is: {}",
-        claims
-    ))
-}
-
 // Posts ---------------------------------------------------------------------------------------------------------------
-
 pub async fn get_all_posts(
     State(mut am_database): State<Store>,
 ) -> Result<Json<Vec<Post>>, AppError> {
@@ -244,6 +270,7 @@ pub async fn delete_vote_by_id(
     Ok(())
 }
 
+// NASA ----------------------------------------------------------------------------------------------------------------
 pub async fn get_nasa_post(
     State(mut am_database): State<Store>,
     Json(query): Json<NasaQuery>
@@ -269,8 +296,8 @@ pub async fn get_nasa_post(
 
         let response = serde_json::from_str::<Value>(&res).unwrap();
 
-        // .as_str().unwrap().to_string() seems really stupid but it's the only way I was able
-        // to get it to work without adding quotation marks to my fields.
+        // .as_str().unwrap().to_string() seems really stupid but it was the only way I was able to get it
+        // to work without adding quotation marks to my fields. Or changing the post struct to use str
         let post_to_add = CreatePost {
             title: response["title"].as_str().unwrap().to_string(),
             explanation: response["explanation"].as_str().unwrap().to_string(),

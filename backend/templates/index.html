@@ -28,6 +28,17 @@
       <input type="submit" value="Login" />
     </form>
 
+    <h2>Register</h2>
+    <form action="/users" method="post">
+      <label for="email">Email:</label>
+      <input type="text" id="email" name="email" />
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" />
+      <label for="confirm_password">Confirm Password:</label>
+      <input type="password" id="confirm_password" name="confirm_password" />
+      <input type="submit" value="Register" />
+    </form>
+
     {% endif %}
   </body>
 </html>
