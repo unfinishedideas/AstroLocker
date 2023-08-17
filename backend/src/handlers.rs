@@ -155,7 +155,7 @@ pub async fn register(
     credentials.password = hashed_password;
 
     // TODO: Change create_user function to not return a user
-    let new_user = database.create_user(credentials.clone()).await?;
+    let _ = database.create_user(credentials.clone()).await?;
 
     // at this point we've authenticated the user's identity
     // create JWT to return

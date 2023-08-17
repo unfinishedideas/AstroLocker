@@ -180,14 +180,12 @@ impl Store {
         // This query courtesy of https://www.tutorialspoint.com/count-number-of-times-value-appears-in-particular-column-in-mysql
         let res = sqlx::query(
             r#"
-            SELECT post_id, COUNT(*) AS NUMBER FROM votes GROUP BY post_id LIMIT 10;
+            SELECT post_id, COUNT(*) AS number FROM votes GROUP BY post_id ORDER BY number DESC LIMIT 10;
             "#
         )
         .fetch_all(&self.conn_pool)
         .await?;
 
-        // GETTING TOP POSTS GETTING TOP POSTS GETTING TOP POSTS GETTING TOP POSTS
-        // [Record { post_id: 4, number: Some(2) }, Record { post_id: 1, number: Some(1) }]
         let posts: Vec<_> = res
         .into_iter()
         .map(|row| {
