@@ -28,7 +28,7 @@ To fully test this out I recommend doing the following
 
 ## What Worked
 
-I think overall the application does what I set out to have it do. It allows users to vote on their favorite images and that information is dynamically updated in the database. Once I got the hang of it, the application routing and sqlx querying became fairly easy to use. I was also pleasantly surprised how easy it was to work with the data being returned by the [APOD api](https://api.nasa.gov/), I found it easy to map the values to my structs in the database.
+I think overall the application does what I set out to have it do. It allows users to vote on their favorite images and that information is dynamically updated in the database. Once I got the hang of it, the application routing and sqlx querying became fairly easy to use. I was also pleasantly surprised how easy it was to work with the data being returned by the [APOD api](https://api.nasa.gov/), I found it easy to map the values to my structs in the database. HTML templating was another nice surprise, I have only done a little of this in Python but felt right at home writing conditionals and adding in variables from the backend to display to the frontend. Seeing the images displayed on the frontend was quite satisfying after the long set up time getting the API ready.
 
 ## What Didn't Work / What I Didn't Have Time For
 
