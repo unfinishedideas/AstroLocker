@@ -6,45 +6,38 @@
     <title>AstroLocker</title>
   </head>
   <body style="padding: 10px">
-    <h1>Astro Locker</h1>
     {% if is_admin %}
     
 <!-- Admin Panel --------------------------------------------------------------------------------------------------- -->
     <hr>
-    <div class="admin_panel" style="padding: 20px">
+    <div class="admin_panel" style="padding: 0px 10px 0px 10px;">
       <h2>Admin Panel</h2>
-      <h3>Ban User</h3>
-      <form action="/ban" method="post">
-        <label for="email">Email:</label>
-        <input type="text" id="email" name="email" />
-        <input type="submit" value="Ban User" />
-      </form>
+        <form action="/ban" method="post" style="margin-right: 20px">
+          <input type="text" id="email" name="email" placeholder="User Email Address" />
+          <input type="submit" value="Ban User" />
+        </form>
+    
+        <form action="/unban" method="post">
+          <input type="text" id="email" name="email" placeholder="User Email Address"/>
+          <input type="submit" value="Unban User" />
+        </form>
+
+        <form action="/promote" method="post">
+          <input type="text" id="email" name="email" placeholder="User Email Address"/>
+          <input type="submit" value="Make Admin" />
+        </form>
   
-      <h3>Unban User</h3>
-      <form action="/unban" method="post">
-        <label for="email">Email:</label>
-        <input type="text" id="email" name="email" />
-        <input type="submit" value="Unban User" />
-      </form>
+        <form action="/demote" method="post">
+          <input type="text" id="email" name="email" placeholder="User Email Address"/>
+          <input type="submit" value="Remove Admin" />
+        </form>
 
-      <h3>Pomote User To Admin</h3>
-      <form action="/promote" method="post">
-        <label for="email">Email:</label>
-        <input type="text" id="email" name="email" />
-        <input type="submit" value="Make Admin" />
-      </form>
-
-      <h3>Demote Admin</h3>
-      <form action="/demote" method="post">
-        <label for="email">Email:</label>
-        <input type="text" id="email" name="email" />
-        <input type="submit" value="Remove Admin" />
-      </form>
     </div>
     <hr>
     {% endif %}
     
 <!-- Main Page ----------------------------------------------------------------------------------------------------- -->
+    <h1>Astro Locker</h1>
     <h2>Welcome User: {{claims.email}}!</h2>
 
     <form action="/logout">
@@ -59,10 +52,12 @@
       ">
       {% for post in top_posts %}
       <div class="top-post" style="max-width: 200px; padding: 10px;">
-        <h3>{{post.title}}</h3>
-        <p>{{post.apod_date}}</p>
-        <img src="{{post.img_url}}" alt="{{post.explanation}}" style="max-width: 200px; max-height: 200px;"></img>
-        <!-- <p>{{post.explanation}}</p> -->
+        <div style="height: 100px">
+          <h3>{{post.title}}</h3>
+        </div>
+        <div style="height: 200px">
+          <img src="{{post.img_url}}" alt="{{post.explanation}}" style="max-width: 200px; max-height: 200px;"></img>
+        </div>
        
         <form method="post"
           {% if post.already_liked == true %}
