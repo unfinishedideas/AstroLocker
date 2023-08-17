@@ -206,7 +206,6 @@ pub async fn login(
 
     let mut response = Response::builder()
         .status(StatusCode::FOUND)
-        // .body()
         .body(Body::empty())
         .unwrap();
 
@@ -276,7 +275,7 @@ pub async fn get_user_posts_by_id(
 // Votes ---------------------------------------------------------------------------------------------------------------
 pub async fn create_vote(
     State(mut am_database): State<Store>,
-    Form(vote): Form<CreateVote>
+    Json(vote): Json<CreateVote>
 ) -> Result<Json<Vote>, AppError> {
     let new_vote = CreateVote {
         post_id: vote.post_id,
@@ -287,17 +286,44 @@ pub async fn create_vote(
     Ok(Json(finished_vote))
 }
 
+pub fn create_response_path() -> Response<Body> {
+    let mut response = Response::builder()
+    .status(StatusCode::FOUND)
+    .body(Body::empty())
+    .unwrap();
+
+    response
+        .headers_mut()
+        .insert(LOCATION, HeaderValue::from_static("/"));
+
+    response
+}
+
+pub async fn create_vote_from_form(
+    State(mut am_database): State<Store>,
+    Form(vote): Form<CreateVote>
+) -> Result<Response<Body>, AppError> {
+    let new_vote = CreateVote {
+        post_id: vote.post_id,
+        user_id: vote.user_id
+    };
+    am_database.create_vote(new_vote).await?;
+    let response = create_response_path();
+
+    Ok(response)
+}
+
 pub async fn delete_vote_from_form(
     State(mut am_database): State<Store>,
     Form(vote): Form<CreateVote>
-) -> Result<(), AppError> {
+) -> Result<Response<Body>, AppError> {
     let old_vote = CreateVote {
         post_id: vote.post_id,
         user_id: vote.user_id
     };
-    am_database.delete_vote(old_vote).await?;
-
-    Ok(())
+    am_database.delete_vote(old_vote).await?;    
+    let response = create_response_path();
+    Ok(response)
 }
 
 pub async fn delete_vote_by_id(
@@ -318,9 +344,22 @@ pub async fn get_votes_for_post(
 
 
 // NASA ----------------------------------------------------------------------------------------------------------------
+pub async fn get_nasa_post_by_form(
+    State(mut am_database): State<Store>,
+    Form(new_query): Form<NasaQuery>
+) -> Result<Response<Body>, AppError> {
+    let query = NasaQuery {
+        query_string: new_query.query_string
+    };
+    let json_query = Json(query);
+    let _ = get_nasa_post(axum::extract::State(am_database), json_query).await?;
+
+    let response = create_response_path();
+    Ok(response)
+}
 pub async fn get_nasa_post(
     State(mut am_database): State<Store>,
-    Form(query): Form<NasaQuery>
+    Json(query): Json<NasaQuery>
 ) -> Result<Json<Post>, AppError> {
     // Check to see if post is already in DB
     let is_cached = am_database.check_cache_by_query_string(query.clone()).await?;
@@ -333,7 +372,6 @@ pub async fn get_nasa_post(
         let date_value = &query.query_string;
         let key = std::env::var("NASA_API_KEY").unwrap();
         let query_string = format!("https://api.nasa.gov/planetary/apod/?api_key={key}&date={date_value}");
-        println!("Query String: {}", query_string);
         let res = reqwest::get(&query_string)
             .await
             .map_err(|_| AppError::InternalServerError)?
@@ -341,7 +379,12 @@ pub async fn get_nasa_post(
             .await
             .map_err(|_| AppError::InternalServerError)?;
 
-        let response = serde_json::from_str::<Value>(&res).unwrap();
+        let response = serde_json::from_str::<Value>(&res).unwrap();    
+        
+        // deal with out of range response
+        if response["code"] == 400 {
+            return Err(AppError::InvalidDateRange)
+        }
 
         // .as_str().unwrap().to_string() seems really stupid but it was the only way I was able to get it
         // to work without adding quotation marks to my fields. Or changing the post struct to use str
@@ -363,31 +406,35 @@ pub async fn get_nasa_post(
 pub async fn ban_user(
     State(mut am_database): State<Store>,
     Form(email_to_ban): Form<UserEmail>
-) -> Result<(), AppError> {
+) -> Result<Response<Body>, AppError> {
     am_database.ban_user_by_email(email_to_ban.email).await?;
-    Ok(())
+    let response = create_response_path();
+    Ok(response)
 }
 
 pub async fn unban_user(
     State(mut am_database): State<Store>,
     Form(email_to_unban): Form<UserEmail>
-) -> Result<(), AppError> {
+) -> Result<Response<Body>, AppError> {
     am_database.unban_user_by_email(email_to_unban.email).await?;
-    Ok(())
+    let response = create_response_path();
+    Ok(response)
 }
 
 pub async fn promote_admin(
     State(mut am_database): State<Store>,
     Form(email_to_admin): Form<UserEmail>
-) -> Result<(), AppError> {
+) -> Result<Response<Body>, AppError> {
     am_database.promote_admin_by_email(email_to_admin.email).await?;
-    Ok(())
+    let response = create_response_path();
+    Ok(response)
 }
 
 pub async fn demote_admin(
     State(mut am_database): State<Store>,
     Form(email_to_admin): Form<UserEmail>
-) -> Result<(), AppError> {
+) -> Result<Response<Body>, AppError> {
     am_database.demote_admin_by_email(email_to_admin.email).await?;
-    Ok(())
+    let response = create_response_path();
+    Ok(response)
 }

@@ -10,6 +10,7 @@
     {% if is_admin %}
     
 <!-- Admin Panel --------------------------------------------------------------------------------------------------- -->
+    <hr>
     <div>
       <h2>Admin Panel</h2>
       <h3>Ban User</h3>
@@ -40,10 +41,11 @@
         <input type="submit" value="Remove Admin" />
       </form>
     </div>
-    
+    <hr>
     {% endif %}
     
 <!-- Main Page ----------------------------------------------------------------------------------------------------- -->
+    <h2>Welcome user {{claims.email}}!</h2>
     <h2>Get a new APOD</h2>
     <form action="/get_apod" method="post">
       <input type="date" name="query_string" value="2023-08-09"/>

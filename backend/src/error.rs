@@ -14,6 +14,7 @@ pub enum AppError {
     InvalidToken,
     InternalServerError,
     NASAError,
+    InvalidDateRange,
     #[allow(dead_code)]
     Any(anyhow::Error),
 }
@@ -47,6 +48,10 @@ impl IntoResponse for AppError {
             AppError::NASAError => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Something terrible happened with NASA".to_string(),
+            ),
+            AppError::InvalidDateRange => (
+                StatusCode::BAD_REQUEST,
+                "You used a value outside the legal date-range for NASA".to_string(),
             ),
         };
 
