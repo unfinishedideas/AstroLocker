@@ -33,7 +33,8 @@ pub async fn app(pool: PgPool) -> Router {
 
         // Votes
         .route("/votes", post(handlers::create_vote))
-        .route("/votes/:id", delete(handlers::delete_vote_by_id))
+        .route("/votes/delete", post(handlers::delete_vote_from_form))
+        .route("/votes/:id", delete(handlers::delete_vote_by_id)) // <- turns out this is useless due to how I set up the db
         // .route("/posts/votes/:id", post(handlers::get_votes_for_post))
 
         // NASA

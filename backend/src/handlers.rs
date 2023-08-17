@@ -282,9 +282,22 @@ pub async fn create_vote(
         post_id: vote.post_id,
         user_id: vote.user_id
     };
-    let new_vote = am_database.create_vote(new_vote).await?;
+    let finished_vote = am_database.create_vote(new_vote).await?;
 
-    Ok(Json(new_vote))
+    Ok(Json(finished_vote))
+}
+
+pub async fn delete_vote_from_form(
+    State(mut am_database): State<Store>,
+    Form(vote): Form<CreateVote>
+) -> Result<(), AppError> {
+    let old_vote = CreateVote {
+        post_id: vote.post_id,
+        user_id: vote.user_id
+    };
+    am_database.delete_vote(old_vote).await?;
+
+    Ok(())
 }
 
 pub async fn delete_vote_by_id(

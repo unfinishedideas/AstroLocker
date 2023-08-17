@@ -388,6 +388,23 @@ impl Store {
         Ok(created_vote)
     }
 
+    pub async fn delete_vote(
+        &mut self,
+        old_vote: CreateVote
+    ) -> Result<(), AppError> {
+        sqlx::query(
+            r#"
+            DELETE FROM votes WHERE user_id=$1 AND post_id=$2
+            "#
+        )
+        .bind(old_vote.user_id)
+        .bind(old_vote.post_id.0)
+        .execute(&self.conn_pool)
+        .await?;
+
+        Ok(())
+    }
+
     pub async fn delete_vote_by_id(&mut self, vote_id: i32) -> Result<(), AppError> {
         sqlx::query(
             r#"

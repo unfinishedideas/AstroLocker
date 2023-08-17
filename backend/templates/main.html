@@ -60,13 +60,27 @@
       <p>{{post.apod_date}}</p>
       <img src="{{post.img_url}}" alt="{{post.explanation}}"></img>
       <p>{{post.explanation}}</p>
-      <form action="/votes" method="post">
+     
+      <form method="post"
+        {% if post.already_liked == true %}
+          action="/votes/delete" 
+        {% else %}
+          action="/votes"
+        {% endif %}
+      >
         <!-- This has got to be terribly insecure ;) -->
         <input name="post_id" value="{{post.id}}" style="display: none"/>
         <input name="user_id" value="{{current_user_id}}" style="display: none"/>
         <p>Number of Likes: {{post.num_likes}}</p>
-        <input type="submit" value="I like this!"/>
+
+        {% if post.already_liked == true %}
+          <input type="submit" value="I don't like this anymore"/>
+        {% else %}
+          <input type="submit" value="I like this!"/>
+        {% endif %}
+
       </form>
+      
       <hr>
     </div>
     {% endfor %}
