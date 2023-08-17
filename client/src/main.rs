@@ -117,15 +117,13 @@ async fn main() -> anyhow::Result<()> {
     // .await?;
 
 
-    let res = client.post("http://localhost:3000/posts/votes/6")
-    .send()
-    .await?;
+    // let res = client.post("http://localhost:3000/posts/votes/6")
+    // .send()
+    // .await?;
 
-    let body = res.text().await?;
-    println!("{}", body);
-    Ok(())
-
-
+    // let body = res.text().await?;
+    // println!("{}", body);
+    // Ok(())
 
 
 

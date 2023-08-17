@@ -13,7 +13,13 @@ use tracing_subscriber::util::SubscriberInitExt;
 
 pub mod db;
 pub mod error;
+
 pub mod handlers;
+pub mod post_handlers;
+pub mod user_handlers;
+pub mod vote_handlers;
+pub mod admin_handlers;
+
 pub mod layers;
 pub mod models;
 

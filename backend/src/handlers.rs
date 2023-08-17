@@ -1,23 +1,19 @@
-use argon2::Config;
-use axum::extract::{Path, State};
+use axum::extract::State;
 use axum::response::{Html, Response};
 use axum::{Form, Json};
-use http::header::{LOCATION, SET_COOKIE};
+use http::header::LOCATION;
 use http::{HeaderValue, StatusCode};
 use hyper::Body;
-use jsonwebtoken::Header;
 use serde_json::Value;
 use tera::Context;
 use tracing::error;
 
 use crate::db::Store;
 use crate::error::AppError;
-use crate::get_timestamp_after_8_hours;
-use crate::models::post::{Post, CreatePost, UpdatePost};
-use crate::models::vote::{Vote, CreateVote};
-use crate::models::user::{Claims, OptionalClaims, User, UserSignup, KEYS, UserEmail};
-use crate::models::nasaquery::NasaQuery;
+use crate::models::post::{Post, CreatePost};
+use crate::models::user::{Claims, OptionalClaims};
 use crate::models::displaypost::{DisplayPost, DisplayPostId};
+use crate::models::nasaquery::NasaQuery;
 
 use crate::template::TEMPLATES;
 
@@ -113,214 +109,6 @@ pub async fn protected(claims: Claims) -> Result<String, AppError> {
     ))
 }
 
-// User ----------------------------------------------------------------------------------------------------------------
-pub async fn register(
-    State(database): State<Store>,
-    Form(mut credentials): Form<UserSignup>,
-) -> Result<Response<Body>, AppError> {
-    // We should also check to validate other things at some point like email address being in right format
-    if credentials.email.is_empty() || credentials.password.is_empty() {
-        return Err(AppError::MissingCredentials);
-    }
-
-    if credentials.password != credentials.confirm_password {
-        return Err(AppError::MissingCredentials);
-    }
-
-    // Check to see if there is already a user in the database with the given email address
-    let existing_user = database.get_user(&credentials.email).await;
-
-    if let Ok(_) = existing_user {
-        return Err(AppError::UserAlreadyExists);
-    }
-
-    // Here we're assured that our credentials are valid and the user doesn't already exist
-    // hash their password
-    let hash_config = Config::default();
-    let salt = std::env::var("SALT").expect("Missing SALT");
-    let hashed_password = match argon2::hash_encoded(
-        credentials.password.as_bytes(),
-        // If you'd like unique salts per-user, simply pass &[] and argon will generate them for you
-        salt.as_bytes(),
-        &hash_config,
-    ) {
-        Ok(result) => result,
-        Err(_) => {
-            return Err(AppError::Any(anyhow::anyhow!("Password hashing failed")));
-        }
-    };
-
-    credentials.password = hashed_password;
-
-    let _ = database.create_user(credentials.clone()).await?;
-
-    // at this point we've authenticated the user's identity
-    // create JWT to return
-    let claims = Claims {
-        id: 0,
-        email: credentials.email.to_owned(),
-        exp: get_timestamp_after_8_hours(),
-    };
-
-    let token = jsonwebtoken::encode(&Header::default(), &claims, &KEYS.encoding)
-        .map_err(|_| AppError::MissingCredentials)?;
-
-    let cookie = cookie::Cookie::build("jwt", token).http_only(true).finish();
-
-    let mut response = Response::builder()
-        .status(StatusCode::FOUND)
-        .body(Body::empty())
-        .unwrap();
-
-    response
-        .headers_mut()
-        .insert(LOCATION, HeaderValue::from_static("/"));
-    response.headers_mut().insert(
-        SET_COOKIE,
-        HeaderValue::from_str(&cookie.to_string()).unwrap(),
-    );
-
-    Ok(response)
-}
-
-
-
-// TODO: Add redirect for failed login!
-pub async fn login(
-    State(database): State<Store>,
-    Form(creds): Form<User>,
-) -> Result<Response<Body>, AppError> {
-    if creds.email.is_empty() || creds.password.is_empty() {
-        return Err(AppError::MissingCredentials);
-    }
-
-    let existing_user = database.get_user(&creds.email).await?;
-
-    let is_password_correct =
-        match argon2::verify_encoded(&*existing_user.password, creds.password.as_bytes()) {
-            Ok(result) => result,
-            Err(_) => {
-                return Err(AppError::InternalServerError);
-            }
-        };
-
-    if !is_password_correct {
-        return Err(AppError::InvalidPassword);
-    }
-
-    // at this point we've authenticated the user's identity
-    // create JWT to return
-    let claims = Claims {
-        id: 0,
-        email: creds.email.to_owned(),
-        exp: get_timestamp_after_8_hours(),
-    };
-
-    let token = jsonwebtoken::encode(&Header::default(), &claims, &KEYS.encoding)
-        .map_err(|_| AppError::MissingCredentials)?;
-
-    let cookie = cookie::Cookie::build("jwt", token).http_only(true).finish();
-
-    let mut response = Response::builder()
-        .status(StatusCode::FOUND)
-        .body(Body::empty())
-        .unwrap();
-
-    response
-        .headers_mut()
-        .insert(LOCATION, HeaderValue::from_static("/"));
-    response.headers_mut().insert(
-        SET_COOKIE,
-        HeaderValue::from_str(&cookie.to_string()).unwrap(),
-    );
-
-    Ok(response)
-}
-
-
-
-// Courtesy of Jesse Ellis via Zulip!
-pub async fn logout () -> Result<Response<Body>, AppError> {
-    let mut response = Response::builder()
-        .status(StatusCode::FOUND)
-        .body(Body::empty())
-        .unwrap();
-    response.headers_mut().insert(
-        SET_COOKIE,
-        HeaderValue::from_static("jwt=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;"),
-    );
-    response.headers_mut().insert(
-        LOCATION,
-        HeaderValue::from_static("/"),
-    );
-    Ok(response)
-}
-
-// Posts ---------------------------------------------------------------------------------------------------------------
-pub async fn get_all_posts(
-    State(mut am_database): State<Store>,
-) -> Result<Json<Vec<Post>>, AppError> {
-    let posts = am_database.get_all_posts().await?;
-    Ok(Json(posts))
-}
-
-pub async fn get_post_by_id(
-    State(mut am_database): State<Store>,
-    Path(query): Path<i32>,
-) -> Result<Json<Post>, AppError> {
-    let post = am_database.get_post_by_id(query).await?;
-    Ok(Json(post))
-}
-
-pub async fn create_post(
-    State(mut am_database): State<Store>,
-    Json(post): Json<CreatePost>,
-) -> Result<Json<Post>, AppError> {
-    let new_post = am_database
-        .add_post(post)
-        .await?;
-    Ok(Json(new_post))
-}
-
-pub async fn delete_post_by_id(
-    State(mut am_database): State<Store>,
-    Path(query): Path<i32>,
-) -> Result<(), AppError> {
-    am_database.delete_post_by_id(query).await?;
-
-    Ok(())
-}
-
-pub async fn update_post_by_id(
-    State(mut am_database): State<Store>,
-    Json(updated_post): Json<UpdatePost>,
-) -> Result<Json<Post>, AppError> {
-    let updated_post = am_database.update_post_by_id(updated_post).await?;
-
-    Ok(Json(updated_post))
-}
-
-pub async fn get_user_posts_by_id(
-    State(mut am_database): State<Store>,
-    Path(query): Path<i32>,
-) -> Result<Json<Vec<Post>>, AppError> {
-    let user_posts = am_database.get_user_posts_by_id(query).await?;
-    Ok(Json(user_posts))
-}
-
-// Votes ---------------------------------------------------------------------------------------------------------------
-pub async fn create_vote(
-    State(mut am_database): State<Store>,
-    Json(vote): Json<CreateVote>
-) -> Result<Json<Vote>, AppError> {
-    let new_vote = CreateVote {
-        post_id: vote.post_id,
-        user_id: vote.user_id
-    };
-    let finished_vote = am_database.create_vote(new_vote).await?;
-
-    Ok(Json(finished_vote))
-}
 
 pub fn create_response_path() -> Response<Body> {
     let mut response = Response::builder()
@@ -334,50 +122,6 @@ pub fn create_response_path() -> Response<Body> {
 
     response
 }
-
-pub async fn create_vote_from_form(
-    State(mut am_database): State<Store>,
-    Form(vote): Form<CreateVote>
-) -> Result<Response<Body>, AppError> {
-    let new_vote = CreateVote {
-        post_id: vote.post_id,
-        user_id: vote.user_id
-    };
-    am_database.create_vote(new_vote).await?;
-    let response = create_response_path();
-
-    Ok(response)
-}
-
-pub async fn delete_vote_from_form(
-    State(mut am_database): State<Store>,
-    Form(vote): Form<CreateVote>
-) -> Result<Response<Body>, AppError> {
-    let old_vote = CreateVote {
-        post_id: vote.post_id,
-        user_id: vote.user_id
-    };
-    am_database.delete_vote(old_vote).await?;    
-    let response = create_response_path();
-    Ok(response)
-}
-
-pub async fn delete_vote_by_id(
-    State(mut am_database): State<Store>,
-    Path(query): Path<i32>,
-) -> Result<(), AppError> {
-    am_database.delete_vote_by_id(query).await?;
-    Ok(())
-}
-
-pub async fn get_votes_for_post(
-    State(mut am_database): State<Store>,
-    query: i32,
-) -> Result<Json<i64>, AppError> {
-    let num_votes = am_database.get_number_of_votes_for_post(query).await?;
-    Ok(Json(num_votes))
-}
-
 
 // NASA ----------------------------------------------------------------------------------------------------------------
 pub async fn get_nasa_post_by_form(
@@ -437,40 +181,3 @@ pub async fn get_nasa_post(
     }
 }
 
-// Admin ---------------------------------------------------------------------------------------------------------------
-// TODO: Add redirects to these!
-pub async fn ban_user(
-    State(mut am_database): State<Store>,
-    Form(email_to_ban): Form<UserEmail>
-) -> Result<Response<Body>, AppError> {
-    am_database.ban_user_by_email(email_to_ban.email).await?;
-    let response = create_response_path();
-    Ok(response)
-}
-
-pub async fn unban_user(
-    State(mut am_database): State<Store>,
-    Form(email_to_unban): Form<UserEmail>
-) -> Result<Response<Body>, AppError> {
-    am_database.unban_user_by_email(email_to_unban.email).await?;
-    let response = create_response_path();
-    Ok(response)
-}
-
-pub async fn promote_admin(
-    State(mut am_database): State<Store>,
-    Form(email_to_admin): Form<UserEmail>
-) -> Result<Response<Body>, AppError> {
-    am_database.promote_admin_by_email(email_to_admin.email).await?;
-    let response = create_response_path();
-    Ok(response)
-}
-
-pub async fn demote_admin(
-    State(mut am_database): State<Store>,
-    Form(email_to_admin): Form<UserEmail>
-) -> Result<Response<Body>, AppError> {
-    am_database.demote_admin_by_email(email_to_admin.email).await?;
-    let response = create_response_path();
-    Ok(response)
-}

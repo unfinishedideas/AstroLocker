@@ -2,7 +2,6 @@ use crate::make_db_id;
 use serde_derive::{Deserialize, Serialize};
 use crate::models::post::PostId;
 
-// TODO: Change user_id's to UserId type!!!!!!
 #[derive(Clone, Debug, Display, Serialize, Deserialize, sqlx::FromRow)]
 #[display(
     fmt = "id: {}, post_id: {}, user_id: {}",

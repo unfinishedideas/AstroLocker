@@ -405,20 +405,6 @@ impl Store {
         Ok(())
     }
 
-    pub async fn delete_vote_by_id(&mut self, vote_id: i32) -> Result<(), AppError> {
-        sqlx::query(
-            r#"
-    DELETE FROM votes WHERE id = $1
-    "#,
-        )
-        .bind(vote_id)
-        .execute(&self.conn_pool)
-        .await
-        .unwrap();
-
-        Ok(())
-    }
-
     pub async fn get_number_of_votes_for_post(&mut self, post_id: i32) -> Result<i64, AppError> {
         let res = sqlx::query!(
             r#"
