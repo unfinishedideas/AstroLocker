@@ -1,7 +1,5 @@
 use axum::extract::FromRequestParts;
-use axum::headers::authorization::Bearer;
-use axum::headers::Authorization;
-use axum::{async_trait, RequestPartsExt, TypedHeader};
+use axum::async_trait;
 use cookie::Cookie;
 use http::request::Parts;
 use jsonwebtoken::{decode, DecodingKey, EncodingKey, Validation};
@@ -10,7 +8,6 @@ use std::convert::Infallible;
 
 use crate::error::AppError;
 use serde_derive::{Deserialize, Serialize};
-use sqlx::decode;
 
 #[derive(Serialize, Deserialize, sqlx::FromRow, Clone, Debug)]
 pub struct User {

@@ -1,23 +1,15 @@
 use axum::Json;
 use serde_json::Value;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Row};
-use tracing::info;
 
 use crate::error::AppError;
 use crate::models::post::{Post, PostId, CreatePost, UpdatePost};
-use crate::models::user::{User, UserSignup, self};
+use crate::models::user::{User, UserSignup};
 use crate::models::vote::{Vote, VoteId, CreateVote};
 use crate::models::nasaquery::NasaQuery;
-// use crate::models::answer::{Answer, AnswerId};
-// use crate::models::comment::{Comment, CommentId, CommentReference};
-// use crate::models::page::{AnswerWithComments, PagePackage, QuestionWithComments};
-// use crate::models::question::{
-//     GetQuestionById, IntoQuestionId, Question, QuestionId, UpdateQuestion,
-// };
-
 #[derive(Clone)]
 pub struct Store {
     pub conn_pool: PgPool,
@@ -40,18 +32,6 @@ impl Store {
             posts: Default::default(),
         }
     }
-
-    // pub async fn test_database(&self) -> Result<(), sqlx::Error> {
-    //     let row: (i64,) = sqlx::query_as("SELECT $1")
-    //         .bind(150_i64)
-    //         .fetch_one(&self.conn_pool)
-    //         .await?;
-
-    //     info!("{}", &row.0);
-
-    //     assert_eq!(row.0, 150);
-    //     Ok(())
-    // }
 
     // Users -----------------------------------------------------------------------------------------------------------
         pub async fn get_user(&self, email: &str) -> Result<User, AppError> {

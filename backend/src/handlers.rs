@@ -1,14 +1,14 @@
 use argon2::Config;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Path, State};
 use axum::response::{Html, Response};
 use axum::{Form, Json};
 use http::header::{LOCATION, SET_COOKIE};
 use http::{HeaderValue, StatusCode};
 use hyper::Body;
 use jsonwebtoken::Header;
-use serde_json::{json, Value};
+use serde_json::Value;
 use tera::Context;
-use tracing::{error, info};
+use tracing::error;
 
 use crate::db::Store;
 use crate::error::AppError;
@@ -115,7 +115,7 @@ pub async fn protected(claims: Claims) -> Result<String, AppError> {
 
 // User ----------------------------------------------------------------------------------------------------------------
 pub async fn register(
-    State(mut database): State<Store>,
+    State(database): State<Store>,
     Form(mut credentials): Form<UserSignup>,
 ) -> Result<Response<Body>, AppError> {
     // We should also check to validate other things at some point like email address being in right format
@@ -187,7 +187,7 @@ pub async fn register(
 
 // TODO: Add redirect for failed login!
 pub async fn login(
-    State(mut database): State<Store>,
+    State(database): State<Store>,
     Form(creds): Form<User>,
 ) -> Result<Response<Body>, AppError> {
     if creds.email.is_empty() || creds.password.is_empty() {
@@ -236,6 +236,7 @@ pub async fn login(
 
     Ok(response)
 }
+
 
 
 // Courtesy of Jesse Ellis via Zulip!
@@ -380,7 +381,7 @@ pub async fn get_votes_for_post(
 
 // NASA ----------------------------------------------------------------------------------------------------------------
 pub async fn get_nasa_post_by_form(
-    State(mut am_database): State<Store>,
+    State(am_database): State<Store>,
     Form(new_query): Form<NasaQuery>
 ) -> Result<Response<Body>, AppError> {
     let query = NasaQuery {
