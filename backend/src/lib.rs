@@ -14,11 +14,11 @@ use tracing_subscriber::util::SubscriberInitExt;
 pub mod db;
 pub mod error;
 
+pub mod admin_handlers;
 pub mod handlers;
 pub mod post_handlers;
 pub mod user_handlers;
 pub mod vote_handlers;
-pub mod admin_handlers;
 
 pub mod layers;
 pub mod models;
@@ -52,7 +52,6 @@ fn get_host_from_env() -> SocketAddr {
 
     SocketAddr::from((api_host, api_port))
 }
-
 
 fn init_logging() {
     // https://github.com/tokio-rs/axum/blob/main/examples/tracing-aka-logging

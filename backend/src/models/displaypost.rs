@@ -20,13 +20,20 @@ pub struct DisplayPost {
     pub img_url: String,
     pub apod_date: String,
     pub already_liked: bool,
-    pub num_likes: i64
+    pub num_likes: i64,
 }
 
 impl DisplayPost {
     #[allow(dead_code)]
-    pub fn new(id: DisplayPostId, title: String, query_string: String, explanation: String, 
-        img_url: String, apod_date: String, already_liked: bool, num_likes: i64
+    pub fn new(
+        id: DisplayPostId,
+        title: String,
+        query_string: String,
+        explanation: String,
+        img_url: String,
+        apod_date: String,
+        already_liked: bool,
+        num_likes: i64,
     ) -> Self {
         DisplayPost {
             id,
@@ -36,7 +43,7 @@ impl DisplayPost {
             img_url,
             apod_date,
             already_liked,
-            num_likes
+            num_likes,
         }
     }
 }

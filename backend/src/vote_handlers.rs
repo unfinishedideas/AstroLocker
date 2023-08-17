@@ -5,17 +5,17 @@ use hyper::Body;
 
 use crate::db::Store;
 use crate::error::AppError;
-use crate::models::vote::{Vote, CreateVote};
 use crate::handlers::create_response_path;
+use crate::models::vote::{CreateVote, Vote};
 
 // Votes ---------------------------------------------------------------------------------------------------------------
 pub async fn create_vote(
     State(mut am_database): State<Store>,
-    Json(vote): Json<CreateVote>
+    Json(vote): Json<CreateVote>,
 ) -> Result<Json<Vote>, AppError> {
     let new_vote = CreateVote {
         post_id: vote.post_id,
-        user_id: vote.user_id
+        user_id: vote.user_id,
     };
     let finished_vote = am_database.create_vote(new_vote).await?;
 
@@ -24,11 +24,11 @@ pub async fn create_vote(
 
 pub async fn create_vote_from_form(
     State(mut am_database): State<Store>,
-    Form(vote): Form<CreateVote>
+    Form(vote): Form<CreateVote>,
 ) -> Result<Response<Body>, AppError> {
     let new_vote = CreateVote {
         post_id: vote.post_id,
-        user_id: vote.user_id
+        user_id: vote.user_id,
     };
     am_database.create_vote(new_vote).await?;
     let response = create_response_path();
@@ -38,13 +38,13 @@ pub async fn create_vote_from_form(
 
 pub async fn delete_vote_from_form(
     State(mut am_database): State<Store>,
-    Form(vote): Form<CreateVote>
+    Form(vote): Form<CreateVote>,
 ) -> Result<Response<Body>, AppError> {
     let old_vote = CreateVote {
         post_id: vote.post_id,
-        user_id: vote.user_id
+        user_id: vote.user_id,
     };
-    am_database.delete_vote(old_vote).await?;    
+    am_database.delete_vote(old_vote).await?;
     let response = create_response_path();
     Ok(response)
 }

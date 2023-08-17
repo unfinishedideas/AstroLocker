@@ -82,7 +82,6 @@ pub async fn register(
     Ok(response)
 }
 
-
 pub async fn login(
     State(database): State<Store>,
     Form(creds): Form<User>,
@@ -135,7 +134,7 @@ pub async fn login(
 }
 
 // Courtesy of Jesse Ellis via Zulip!
-pub async fn logout () -> Result<Response<Body>, AppError> {
+pub async fn logout() -> Result<Response<Body>, AppError> {
     let mut response = Response::builder()
         .status(StatusCode::FOUND)
         .body(Body::empty())
@@ -144,9 +143,8 @@ pub async fn logout () -> Result<Response<Body>, AppError> {
         SET_COOKIE,
         HeaderValue::from_static("jwt=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;"),
     );
-    response.headers_mut().insert(
-        LOCATION,
-        HeaderValue::from_static("/"),
-    );
+    response
+        .headers_mut()
+        .insert(LOCATION, HeaderValue::from_static("/"));
     Ok(response)
 }

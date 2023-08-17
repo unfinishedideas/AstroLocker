@@ -16,13 +16,18 @@ pub struct Post {
     pub query_string: String,
     pub explanation: String,
     pub img_url: String,
-    pub apod_date: String
+    pub apod_date: String,
 }
 
 impl Post {
     #[allow(dead_code)]
-    pub fn new(id: PostId, title: String, query_string: String, explanation: String, 
-        img_url: String, apod_date: String
+    pub fn new(
+        id: PostId,
+        title: String,
+        query_string: String,
+        explanation: String,
+        img_url: String,
+        apod_date: String,
     ) -> Self {
         Post {
             id,
@@ -30,7 +35,7 @@ impl Post {
             query_string,
             explanation,
             img_url,
-            apod_date
+            apod_date,
         }
     }
 }
@@ -44,7 +49,7 @@ pub struct CreatePost {
     pub query_string: String,
     pub explanation: String,
     pub img_url: String,
-    pub apod_date: String
+    pub apod_date: String,
 }
 
 #[derive(Deserialize)]
@@ -59,5 +64,5 @@ pub struct UpdatePost {
     pub query_string: String,
     pub explanation: String,
     pub img_url: String,
-    pub apod_date: String
+    pub apod_date: String,
 }

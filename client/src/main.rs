@@ -1,9 +1,9 @@
-use reqwest::Client;
-use backend::models::post::{CreatePost, UpdatePost, PostId};  
+use backend::models::nasaquery::NasaQuery;
+use backend::models::post::{CreatePost, PostId, UpdatePost};
+use backend::models::user::UserSignup;
 use backend::models::vote::{CreateVote, VoteId};
-use backend::models::user::{UserSignup};
-use backend::models::nasaquery::{NasaQuery};
 use chrono::{Datelike, Timelike, Utc};
+use reqwest::Client;
 use serde_json::Value;
 
 #[tokio::main]
@@ -22,7 +22,6 @@ async fn main() -> anyhow::Result<()> {
     //     .send()
     //     .await?;
 
-
     // // Create a test post
     // let test_post = CreatePost {
     //     title: "Client Test Post".into(),
@@ -36,15 +35,12 @@ async fn main() -> anyhow::Result<()> {
     //     .json(&test_post)
     //     .send()
     //     .await?;
- 
-
 
     // Get posts for a user
     // let res = client.get("http://localhost:3000/users/3/posts")
     //     .send()
     //     .await?;
 
-    
     // // Get post by id
     // let res = client.get("http://localhost:3000/posts/1")
     //     .send()
@@ -70,7 +66,6 @@ async fn main() -> anyhow::Result<()> {
     //     .send()
     //     .await?;
 
-
     // // Vote for a post
     // let new_vote = CreateVote{
     //     post_id: PostId(4),
@@ -80,7 +75,6 @@ async fn main() -> anyhow::Result<()> {
     //     .json(&new_vote)
     //     .send()
     //     .await?;
-
 
     // Delete a vote for a post
     // let res = client.delete("http://localhost:3000/votes/3")
@@ -92,8 +86,6 @@ async fn main() -> anyhow::Result<()> {
     // .send()
     // .await?;
 
-    
-    
     // NASA Query
     // let query = NasaQuery {
     //     query_string: "1999-08-09".into()
@@ -102,7 +94,6 @@ async fn main() -> anyhow::Result<()> {
     // .json(&query)
     // .send()
     // .await?;
-
 
     // make a user
     // let new_user = UserSignup {
@@ -116,7 +107,6 @@ async fn main() -> anyhow::Result<()> {
     // .send()
     // .await?;
 
-
     // let res = client.post("http://localhost:3000/posts/votes/6")
     // .send()
     // .await?;
@@ -124,9 +114,6 @@ async fn main() -> anyhow::Result<()> {
     // let body = res.text().await?;
     // println!("{}", body);
     // Ok(())
-
-
-
 
     // let res = reqwest::get("http://localhost:3000/posts/1")
     //     .await?
@@ -136,6 +123,6 @@ async fn main() -> anyhow::Result<()> {
     // let response = serde_json::from_str::<Value>(&res).unwrap();
 
     // println!("Title: {}", response["title"].as_str().unwrap());
-//     println!("Title: {}", response["title"].to_string());
-//     Ok(())
+    //     println!("Title: {}", response["title"].to_string());
+    //     Ok(())
 }

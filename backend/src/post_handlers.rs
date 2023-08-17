@@ -1,9 +1,8 @@
-
-use axum::extract::{Path, State};
-use axum::Json;
 use crate::db::Store;
 use crate::error::AppError;
-use crate::models::post::{Post, CreatePost, UpdatePost};
+use crate::models::post::{CreatePost, Post, UpdatePost};
+use axum::extract::{Path, State};
+use axum::Json;
 
 // Posts ---------------------------------------------------------------------------------------------------------------
 pub async fn get_all_posts(
@@ -25,9 +24,7 @@ pub async fn create_post(
     State(mut am_database): State<Store>,
     Json(post): Json<CreatePost>,
 ) -> Result<Json<Post>, AppError> {
-    let new_post = am_database
-        .add_post(post)
-        .await?;
+    let new_post = am_database.add_post(post).await?;
     Ok(Json(new_post))
 }
 

@@ -6,10 +6,10 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Row};
 
 use crate::error::AppError;
-use crate::models::post::{Post, PostId, CreatePost, UpdatePost};
-use crate::models::user::{User, UserSignup};
-use crate::models::vote::{Vote, VoteId, CreateVote};
 use crate::models::nasaquery::NasaQuery;
+use crate::models::post::{CreatePost, Post, PostId, UpdatePost};
+use crate::models::user::{User, UserSignup};
+use crate::models::vote::{CreateVote, Vote, VoteId};
 #[derive(Clone)]
 pub struct Store {
     pub conn_pool: PgPool,
@@ -34,7 +34,7 @@ impl Store {
     }
 
     // Users -----------------------------------------------------------------------------------------------------------
-        pub async fn get_user(&self, email: &str) -> Result<User, AppError> {
+    pub async fn get_user(&self, email: &str) -> Result<User, AppError> {
         let user = sqlx::query_as::<_, User>(
             r#"
                 SELECT email, password FROM users WHERE email = $1
@@ -49,22 +49,23 @@ impl Store {
 
     pub async fn get_user_id_by_email(&self, email: String) -> Result<i32, AppError> {
         let res = sqlx::query(r#"SELECT id FROM users WHERE email=$1"#)
-        .bind(email)
-        .fetch_one(&self.conn_pool)
-        .await?;
+            .bind(email)
+            .fetch_one(&self.conn_pool)
+            .await?;
 
-        let id :i32 = res.get("id");
+        let id: i32 = res.get("id");
 
         Ok(id)
     }
 
     pub async fn create_user(&self, user: UserSignup) -> Result<Json<Value>, AppError> {
-        let result = sqlx::query("INSERT INTO users(email, password, is_banned) values ($1, $2, false)")
-            .bind(&user.email)
-            .bind(&user.password)
-            .execute(&self.conn_pool)
-            .await
-            .map_err(|_| AppError::InternalServerError)?;
+        let result =
+            sqlx::query("INSERT INTO users(email, password, is_banned) values ($1, $2, false)")
+                .bind(&user.email)
+                .bind(&user.password)
+                .execute(&self.conn_pool)
+                .await
+                .map_err(|_| AppError::InternalServerError)?;
 
         if result.rows_affected() < 1 {
             Err(AppError::InternalServerError)
@@ -77,68 +78,62 @@ impl Store {
 
     pub async fn determine_if_user_banned(&mut self, email: String) -> Result<bool, AppError> {
         let res = sqlx::query(r#"SELECT * FROM users WHERE email=$1"#)
-        .bind(email)
-        .fetch_one(&self.conn_pool)
-        .await?;
+            .bind(email)
+            .fetch_one(&self.conn_pool)
+            .await?;
         Ok(res.get("is_banned"))
     }
 
     pub async fn determine_if_user_admin(&mut self, email: String) -> Result<bool, AppError> {
-        let res = sqlx::query(r#"
+        let res = sqlx::query(
+            r#"
             SELECT * FROM users 
             INNER JOIN admins 
             ON admins.admin_user_id = users.id
             WHERE email=$1;
-        "#)
+        "#,
+        )
         .bind(email)
         .fetch_optional(&self.conn_pool)
         .await?;
 
-        if res.is_none(){
+        if res.is_none() {
             Ok(false)
-        }
-        else {
+        } else {
             Ok(true)
         }
     }
 
     // Posts -----------------------------------------------------------------------------------------------------------
-    pub async fn get_all_posts(
-        &mut self,
-    ) -> Result<Vec<Post>, AppError> {
+    pub async fn get_all_posts(&mut self) -> Result<Vec<Post>, AppError> {
         let res = sqlx::query(
             r#"
             SELECT * FROM posts;
-            "#
+            "#,
         )
         .fetch_all(&self.conn_pool)
         .await?;
 
         let posts: Vec<_> = res
-        .into_iter()
-        .map(|row| {
-            Post{
+            .into_iter()
+            .map(|row| Post {
                 id: PostId(row.get("id")),
                 title: row.get("title"),
                 query_string: row.get("query_string"),
                 explanation: row.get("explanation"),
                 img_url: row.get("img_url"),
-                apod_date: row.get("apod_date")
-            }
-        })
-        .collect();
-        
+                apod_date: row.get("apod_date"),
+            })
+            .collect();
+
         Ok(posts)
     }
 
-    pub async fn get_post_by_id(
-        &mut self,
-        post_id: i32
-    ) -> Result<Post, AppError> {
+    pub async fn get_post_by_id(&mut self, post_id: i32) -> Result<Post, AppError> {
         let res = sqlx::query(
             r#"
             SELECT * FROM posts WHERE id=$1
-            "#
+            "#,
         )
         .bind(post_id)
         .fetch_one(&self.conn_pool)
@@ -150,7 +145,7 @@ impl Store {
             query_string: res.get("query_string"),
             explanation: res.get("explanation"),
             img_url: res.get("img_url"),
-            apod_date: res.get("apod_date")
+            apod_date: res.get("apod_date"),
         };
 
         Ok(post)
@@ -166,20 +161,12 @@ impl Store {
         .fetch_all(&self.conn_pool)
         .await?;
 
-        let posts: Vec<_> = res
-        .into_iter()
-        .map(|row| {
-            row.get("post_id")
-        })
-        .collect();
+        let posts: Vec<_> = res.into_iter().map(|row| row.get("post_id")).collect();
 
         Ok(posts)
     }
 
-    pub async fn add_post(
-        &mut self,
-        new_post: CreatePost
-    ) -> Result<Post, AppError> {      
+    pub async fn add_post(&mut self, new_post: CreatePost) -> Result<Post, AppError> {
         let res = sqlx::query(
             r#"
             INSERT INTO posts (title, query_string, explanation, img_url, apod_date) 
@@ -187,13 +174,13 @@ impl Store {
             RETURNING *
             "#,
         )
-            .bind(new_post.title)
-            .bind(new_post.query_string)
-            .bind(new_post.explanation)
-            .bind(new_post.img_url)
-            .bind(new_post.apod_date)
-            .fetch_one(&self.conn_pool)
-            .await?;
+        .bind(new_post.title)
+        .bind(new_post.query_string)
+        .bind(new_post.explanation)
+        .bind(new_post.img_url)
+        .bind(new_post.apod_date)
+        .fetch_one(&self.conn_pool)
+        .await?;
 
         let post = Post {
             id: PostId(res.get("id")),
@@ -201,7 +188,7 @@ impl Store {
             query_string: res.get("query_string"),
             explanation: res.get("explanation"),
             img_url: res.get("img_url"),
-            apod_date: res.get("apod_date")
+            apod_date: res.get("apod_date"),
         };
 
         Ok(post)
@@ -221,10 +208,7 @@ impl Store {
         Ok(())
     }
 
-    pub async fn update_post_by_id(
-        &mut self,
-        new_post: UpdatePost
-    ) -> Result<Post, AppError> {      
+    pub async fn update_post_by_id(&mut self, new_post: UpdatePost) -> Result<Post, AppError> {
         sqlx::query(
             r#"
             UPDATE posts
@@ -232,19 +216,19 @@ impl Store {
             WHERE id = $6
             "#,
         )
-            .bind(new_post.title)
-            .bind(new_post.query_string)
-            .bind(new_post.explanation)
-            .bind(new_post.img_url)
-            .bind(new_post.apod_date)
-            .bind(new_post.id.0)
+        .bind(new_post.title)
+        .bind(new_post.query_string)
+        .bind(new_post.explanation)
+        .bind(new_post.img_url)
+        .bind(new_post.apod_date)
+        .bind(new_post.id.0)
         .execute(&self.conn_pool)
-            .await?;
+        .await?;
 
         let res = sqlx::query(
             r#"
             SELECT * FROM posts WHERE id=$1
-            "#
+            "#,
         )
         .bind(new_post.id.0)
         .fetch_one(&self.conn_pool)
@@ -256,20 +240,17 @@ impl Store {
             query_string: res.get("query_string"),
             explanation: res.get("explanation"),
             img_url: res.get("img_url"),
-            apod_date: res.get("apod_date")
+            apod_date: res.get("apod_date"),
         };
 
         Ok(new_post)
     }
 
-    pub async fn get_post_by_query_string(
-        &mut self,
-        query: NasaQuery
-    ) -> Result<Post, AppError> {
+    pub async fn get_post_by_query_string(&mut self, query: NasaQuery) -> Result<Post, AppError> {
         let res = sqlx::query(
             r#"
             SELECT * FROM posts WHERE query_string=$1
-            "#
+            "#,
         )
         .bind(query.query_string)
         .fetch_one(&self.conn_pool)
@@ -281,7 +262,7 @@ impl Store {
             query_string: res.get("query_string"),
             explanation: res.get("explanation"),
             img_url: res.get("img_url"),
-            apod_date: res.get("apod_date")
+            apod_date: res.get("apod_date"),
         };
 
         Ok(post)
@@ -289,7 +270,7 @@ impl Store {
 
     pub async fn check_cache_by_query_string(
         &mut self,
-        query: NasaQuery
+        query: NasaQuery,
     ) -> Result<bool, AppError> {
         let res = sqlx::query!(
             r#"
@@ -301,43 +282,37 @@ impl Store {
         .await?;
 
         println!("{:?}", res);
-        if res.exists == Some(false)
-        {
+        if res.exists == Some(false) {
             Ok(false)
         } else {
             Ok(true)
         }
     }
 
-    pub async fn get_user_posts_by_id(
-        &mut self,
-        user_id: i32
-    ) -> Result<Vec<Post>, AppError> {
+    pub async fn get_user_posts_by_id(&mut self, user_id: i32) -> Result<Vec<Post>, AppError> {
         let res = sqlx::query(
             r#"
             SELECT * FROM posts
             INNER JOIN votes
             ON posts.id = votes.post_id
             WHERE user_id=$1;
-            "#
+            "#,
         )
         .bind(user_id)
         .fetch_all(&self.conn_pool)
         .await?;
 
         let posts: Vec<_> = res
-        .into_iter()
-        .map(|row| {
-            Post{
+            .into_iter()
+            .map(|row| Post {
                 id: PostId(row.get("id")),
                 title: row.get("title"),
                 query_string: row.get("query_string"),
                 explanation: row.get("explanation"),
                 img_url: row.get("img_url"),
-                apod_date: row.get("apod_date")
-            }
-        })
-        .collect();
+                apod_date: row.get("apod_date"),
+            })
+            .collect();
 
         Ok(posts)
     }
@@ -345,57 +320,52 @@ impl Store {
     pub async fn determine_if_user_liked_post(
         &mut self,
         user_id: i32,
-        post_id: i32
+        post_id: i32,
     ) -> Result<bool, AppError> {
         let res = sqlx::query!(
             r#"
             SELECT * FROM votes WHERE user_id=$1 AND post_id=$2
-            "#, user_id, post_id
+            "#,
+            user_id,
+            post_id
         )
         .fetch_optional(&self.conn_pool)
         .await?;
 
         if res.is_some() {
             Ok(true)
-        }
-        else {
+        } else {
             Ok(false)
         }
     }
 
     // Votes -----------------------------------------------------------------------------------------------------------
-    pub async fn create_vote(
-        &mut self,
-        new_vote: CreateVote
-    ) -> Result<Vote, AppError> {
+    pub async fn create_vote(&mut self, new_vote: CreateVote) -> Result<Vote, AppError> {
         let res = sqlx::query(
             r#"
             INSERT INTO votes (post_id, user_id) VALUES($1, $2)
             RETURNING *
-            "#
+            "#,
         )
         .bind(new_vote.post_id.0)
         .bind(new_vote.user_id)
         .fetch_one(&self.conn_pool)
         .await?;
-        
-        let created_vote = Vote{
+
+        let created_vote = Vote {
             id: VoteId(res.get("id")),
             post_id: PostId(res.get("post_id")),
-            user_id: res.get("user_id")
+            user_id: res.get("user_id"),
         };
 
         Ok(created_vote)
     }
 
-    pub async fn delete_vote(
-        &mut self,
-        old_vote: CreateVote
-    ) -> Result<(), AppError> {
+    pub async fn delete_vote(&mut self, old_vote: CreateVote) -> Result<(), AppError> {
         sqlx::query(
             r#"
             DELETE FROM votes WHERE user_id=$1 AND post_id=$2
-            "#
+            "#,
         )
         .bind(old_vote.user_id)
         .bind(old_vote.post_id.0)
@@ -411,7 +381,8 @@ impl Store {
             SELECT COUNT(posts.id) AS "num_votes" FROM
 votes INNER JOIN posts ON votes.post_id = posts.id
 WHERE post_id = $1;
-            "#, post_id
+            "#,
+            post_id
         )
         // .bind(post_id)
         .fetch_one(&self.conn_pool)
@@ -423,7 +394,7 @@ WHERE post_id = $1;
         }
         Ok(num_votes)
     }
-    
+
     // Admin -----------------------------------------------------------------------------------------------------------
     pub async fn ban_user_by_email(&mut self, email_to_ban: String) -> Result<(), AppError> {
         sqlx::query(
@@ -455,12 +426,15 @@ WHERE post_id = $1;
         Ok(())
     }
 
-    pub async fn promote_admin_by_email(&mut self, email_to_promote: String) -> Result<(), AppError> {
+    pub async fn promote_admin_by_email(
+        &mut self,
+        email_to_promote: String,
+    ) -> Result<(), AppError> {
         // Get UserId
         let res = sqlx::query(
             r#"
             SELECT id FROM users WHERE email=$1
-            "#
+            "#,
         )
         .bind(email_to_promote)
         .fetch_one(&self.conn_pool)
@@ -472,7 +446,7 @@ WHERE post_id = $1;
         sqlx::query(
             r#"
             INSERT INTO admins (admin_user_id) VALUES ($1)
-            "#
+            "#,
         )
         .bind(user_id)
         .execute(&self.conn_pool)
@@ -486,7 +460,7 @@ WHERE post_id = $1;
         let res = sqlx::query(
             r#"
             SELECT id FROM users WHERE email=$1
-            "#
+            "#,
         )
         .bind(email_to_demote)
         .fetch_one(&self.conn_pool)
@@ -498,7 +472,7 @@ WHERE post_id = $1;
         sqlx::query(
             r#"
             DELETE FROM admins WHERE admin_user_id=$1
-            "#
+            "#,
         )
         .bind(user_id)
         .execute(&self.conn_pool)
