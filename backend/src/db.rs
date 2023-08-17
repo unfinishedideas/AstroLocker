@@ -8,7 +8,7 @@ use tracing::info;
 
 use crate::error::AppError;
 use crate::models::post::{Post, PostId, CreatePost, UpdatePost};
-use crate::models::user::{User, UserSignup};
+use crate::models::user::{User, UserSignup, self};
 use crate::models::vote::{Vote, VoteId, CreateVote};
 use crate::models::nasaquery::NasaQuery;
 // use crate::models::answer::{Answer, AnswerId};
@@ -342,6 +342,27 @@ impl Store {
         Ok(posts)
     }
 
+    pub async fn determine_if_user_liked_post(
+        &mut self,
+        user_id: i32,
+        post_id: i32
+    ) -> Result<bool, AppError> {
+        let res = sqlx::query!(
+            r#"
+            SELECT * FROM votes WHERE user_id=$1 AND post_id=$2
+            "#, user_id, post_id
+        )
+        .fetch_optional(&self.conn_pool)
+        .await?;
+
+        if res.is_some() {
+            Ok(true)
+        }
+        else {
+            Ok(false)
+        }
+    }
+
     // Votes -----------------------------------------------------------------------------------------------------------
     pub async fn create_vote(
         &mut self,
@@ -379,6 +400,25 @@ impl Store {
         .unwrap();
 
         Ok(())
+    }
+
+    pub async fn get_number_of_votes_for_post(&mut self, post_id: i32) -> Result<i64, AppError> {
+        let res = sqlx::query!(
+            r#"
+            SELECT COUNT(posts.id) AS "num_votes" FROM
+votes INNER JOIN posts ON votes.post_id = posts.id
+WHERE post_id = $1;
+            "#, post_id
+        )
+        // .bind(post_id)
+        .fetch_one(&self.conn_pool)
+        .await?;
+
+        let mut num_votes = 0;
+        if res.num_votes.is_some() {
+            num_votes = res.num_votes.unwrap()
+        }
+        Ok(num_votes)
     }
     
     // Admin -----------------------------------------------------------------------------------------------------------

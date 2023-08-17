@@ -17,6 +17,7 @@ use crate::models::post::{Post, CreatePost, UpdatePost};
 use crate::models::vote::{Vote, CreateVote};
 use crate::models::user::{Claims, OptionalClaims, User, UserSignup, KEYS, UserEmail};
 use crate::models::nasaquery::NasaQuery;
+use crate::models::displaypost::{DisplayPost, DisplayPostId};
 
 use crate::template::TEMPLATES;
 
@@ -50,7 +51,25 @@ pub async fn root(
 
             // Get all the post data
             let posts = am_database.get_all_posts().await?;
-            context.insert("all_posts", &posts);
+            am_database.determine_if_user_liked_post(9, 4).await?;
+            am_database.determine_if_user_liked_post(9, 6).await?;
+            let mut display_posts = Vec::new();
+            for post in posts {
+                let num_likes = am_database.get_number_of_votes_for_post(post.id.0).await?;
+                let already_liked = am_database.determine_if_user_liked_post(current_user_id, post.id.0).await?;
+                display_posts.push(
+                    DisplayPost { 
+                        id: DisplayPostId(post.id.0), 
+                        title: (post.title), 
+                        query_string: (post.query_string), 
+                        explanation: (post.explanation), 
+                        img_url: (post.img_url), 
+                        apod_date: (post.apod_date), 
+                        already_liked: (already_liked), 
+                        num_likes: (num_likes) }
+                )
+            }
+            context.insert("all_posts", &display_posts);
             "main.html"
         }
     } else {
@@ -275,6 +294,15 @@ pub async fn delete_vote_by_id(
     am_database.delete_vote_by_id(query).await?;
     Ok(())
 }
+
+pub async fn get_votes_for_post(
+    State(mut am_database): State<Store>,
+    query: i32,
+) -> Result<Json<i64>, AppError> {
+    let num_votes = am_database.get_number_of_votes_for_post(query).await?;
+    Ok(Json(num_votes))
+}
+
 
 // NASA ----------------------------------------------------------------------------------------------------------------
 pub async fn get_nasa_post(
