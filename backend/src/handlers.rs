@@ -51,8 +51,6 @@ pub async fn root(
 
             // Get all the post data
             let posts = am_database.get_all_posts().await?;
-            am_database.determine_if_user_liked_post(9, 4).await?;
-            am_database.determine_if_user_liked_post(9, 6).await?;
             let mut display_posts = Vec::new();
             for post in posts {
                 let num_likes = am_database.get_number_of_votes_for_post(post.id.0).await?;
@@ -69,7 +67,30 @@ pub async fn root(
                         num_likes: (num_likes) }
                 )
             }
+
+            let top_posts = am_database.get_top_posts().await?;
+            println!("TOP POSTS {:?}", top_posts);
+            let mut top_display_posts = Vec::new();
+            for post_id in top_posts {
+                let post = am_database.get_post_by_id(post_id).await?;
+                let num_likes = am_database.get_number_of_votes_for_post(post.id.0).await?;
+                let already_liked = am_database.determine_if_user_liked_post(current_user_id, post.id.0).await?;
+                top_display_posts.push(
+                    DisplayPost { 
+                        id: DisplayPostId(post.id.0), 
+                        title: (post.title), 
+                        query_string: (post.query_string), 
+                        explanation: (post.explanation), 
+                        img_url: (post.img_url), 
+                        apod_date: (post.apod_date), 
+                        already_liked: (already_liked), 
+                        num_likes: (num_likes) }
+                )
+            }
+
             context.insert("all_posts", &display_posts);
+            context.insert("top_posts", &top_display_posts);
+
             "main.html"
         }
     } else {
@@ -219,6 +240,10 @@ pub async fn login(
 
     Ok(response)
 }
+
+// pub async fn logout(State(mut am_database): State<Store>) -> Result<Response<Body>, AppError> {
+
+// }
 
 // Posts ---------------------------------------------------------------------------------------------------------------
 pub async fn get_all_posts(

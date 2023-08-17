@@ -176,6 +176,28 @@ impl Store {
         Ok(post)
     }
 
+    pub async fn get_top_posts(&mut self) -> Result<Vec<i32>, AppError> {
+        // This query courtesy of https://www.tutorialspoint.com/count-number-of-times-value-appears-in-particular-column-in-mysql
+        let res = sqlx::query(
+            r#"
+            SELECT post_id, COUNT(*) AS NUMBER FROM votes GROUP BY post_id LIMIT 10;
+            "#
+        )
+        .fetch_all(&self.conn_pool)
+        .await?;
+
+        // GETTING TOP POSTS GETTING TOP POSTS GETTING TOP POSTS GETTING TOP POSTS
+        // [Record { post_id: 4, number: Some(2) }, Record { post_id: 1, number: Some(1) }]
+        let posts: Vec<_> = res
+        .into_iter()
+        .map(|row| {
+            row.get("post_id")
+        })
+        .collect();
+
+        Ok(posts)
+    }
+
     pub async fn add_post(
         &mut self,
         new_post: CreatePost

@@ -5,26 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AstroLocker</title>
   </head>
-  <body>
+  <body style="padding: 10px">
     <h1>Astro Locker</h1>
     {% if is_admin %}
     
 <!-- Admin Panel --------------------------------------------------------------------------------------------------- -->
     <hr>
-    <div>
+    <div class="admin_panel" style="padding: 20px">
       <h2>Admin Panel</h2>
       <h3>Ban User</h3>
       <form action="/ban" method="post">
         <label for="email">Email:</label>
         <input type="text" id="email" name="email" />
-        <input type="submit" value="Ban" />
+        <input type="submit" value="Ban User" />
       </form>
   
       <h3>Unban User</h3>
       <form action="/unban" method="post">
         <label for="email">Email:</label>
         <input type="text" id="email" name="email" />
-        <input type="submit" value="Unban" />
+        <input type="submit" value="Unban User" />
       </form>
 
       <h3>Pomote User To Admin</h3>
@@ -45,15 +45,56 @@
     {% endif %}
     
 <!-- Main Page ----------------------------------------------------------------------------------------------------- -->
-    <h2>Welcome user {{claims.email}}!</h2>
+    <h2>Welcome User: {{claims.email}}!</h2>
+
+    <form action="/logout">
+      <input type="submit" value="Log out"/>
+    </form>
+
+    <h2>Today's Top Pictures</h2>
+    <div class="top-post-container" 
+      style="
+        display: flex;
+        flex-direction: row;
+      ">
+      {% for post in top_posts %}
+      <div class="top-post" style="max-width: 200px; padding: 10px;">
+        <h3>{{post.title}}</h3>
+        <p>{{post.apod_date}}</p>
+        <img src="{{post.img_url}}" alt="{{post.explanation}}" style="max-width: 200px; max-height: 200px;"></img>
+        <!-- <p>{{post.explanation}}</p> -->
+       
+        <form method="post"
+          {% if post.already_liked == true %}
+            action="/votes/delete" 
+          {% else %}
+            action="/votes"
+          {% endif %}
+        >
+          <!-- This has got to be terribly insecure ;) -->
+          <input name="post_id" value="{{post.id}}" style="display: none"/>
+          <input name="user_id" value="{{current_user_id}}" style="display: none"/>
+          <p>Number of Likes: {{post.num_likes}}</p>
+  
+          {% if post.already_liked == true %}
+            <input type="submit" value="I don't like this anymore"/>
+          {% else %}
+            <input type="submit" value="I like this!"/>
+          {% endif %}
+  
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    <hr>
+
     <h2>Get a new APOD</h2>
     <form action="/get_apod" method="post">
       <input type="date" name="query_string" value="2023-08-09"/>
       <input type="submit" value="What was the APOD on this date"/>
     </form>
 
-    <h2>Popular Pictures</h2>
-
+    <br>
     <h2>All Pictures</h2>
 
     {% for post in all_posts %}
