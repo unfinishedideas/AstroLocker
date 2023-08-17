@@ -69,7 +69,6 @@ pub async fn root(
             }
 
             let top_posts = am_database.get_top_posts().await?;
-            println!("TOP POSTS {:?}", top_posts);
             let mut top_display_posts = Vec::new();
             for post_id in top_posts {
                 let post = am_database.get_post_by_id(post_id).await?;
@@ -87,7 +86,6 @@ pub async fn root(
                         num_likes: (num_likes) }
                 )
             }
-
             context.insert("all_posts", &display_posts);
             context.insert("top_posts", &top_display_posts);
 
@@ -154,7 +152,6 @@ pub async fn register(
 
     credentials.password = hashed_password;
 
-    // TODO: Change create_user function to not return a user
     let _ = database.create_user(credentials.clone()).await?;
 
     // at this point we've authenticated the user's identity
@@ -184,7 +181,6 @@ pub async fn register(
     );
 
     Ok(response)
-    // Ok(new_user)
 }
 
 
@@ -241,9 +237,23 @@ pub async fn login(
     Ok(response)
 }
 
-// pub async fn logout(State(mut am_database): State<Store>) -> Result<Response<Body>, AppError> {
 
-// }
+// Courtesy of Jesse Ellis via Zulip!
+pub async fn logout () -> Result<Response<Body>, AppError> {
+    let mut response = Response::builder()
+        .status(StatusCode::FOUND)
+        .body(Body::empty())
+        .unwrap();
+    response.headers_mut().insert(
+        SET_COOKIE,
+        HeaderValue::from_static("jwt=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;"),
+    );
+    response.headers_mut().insert(
+        LOCATION,
+        HeaderValue::from_static("/"),
+    );
+    Ok(response)
+}
 
 // Posts ---------------------------------------------------------------------------------------------------------------
 pub async fn get_all_posts(
